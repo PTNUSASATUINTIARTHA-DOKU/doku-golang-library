@@ -106,6 +106,6 @@ func (ts TokenService) CreateTokenB2B(tokenB2BRequestDTO models.TokenB2BRequestD
 		fmt.Println("Error reading response body:", err)
 	}
 
-	fmt.Println("Response :::", tokenB2BResponse)
+	fmt.Println("Response :", tokenB2BResponse)
 	return tokenB2BResponse
 }
