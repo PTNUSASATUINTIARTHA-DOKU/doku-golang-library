@@ -45,5 +45,6 @@ func initializeSnap() {
 }
 
 func main() {
+	//Running GetTokenB2B
 	initializeSnap()
 }
