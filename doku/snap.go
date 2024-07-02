@@ -9,6 +9,7 @@ import (
 )
 
 var TokenController controllers.TokenController
+var VaController controllers.VaController
 
 type Snap struct {
 	// ----------------
@@ -18,9 +19,9 @@ type Snap struct {
 	ClientId     string
 	IsProduction bool
 	// ----------------
-	TokenB2B                string
-	TokenExpiresIn          int
-	TokenGeneratedTimestamp string
+	tokenB2B                string
+	tokenExpiresIn          int
+	tokenGeneratedTimestamp string
 }
 
 func (snap *Snap) GetTokenB2B() {
@@ -29,7 +30,31 @@ func (snap *Snap) GetTokenB2B() {
 }
 
 func (snap *Snap) setTokenB2B(tokenB2BResponseDTO models.TokenB2BResponseDTO) {
-	snap.TokenB2B = tokenB2BResponseDTO.AccessToken
-	snap.TokenExpiresIn = tokenB2BResponseDTO.ExpiresIn - 10
-	snap.TokenGeneratedTimestamp = strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
+	snap.tokenB2B = tokenB2BResponseDTO.AccessToken
+	snap.tokenExpiresIn = tokenB2BResponseDTO.ExpiresIn - 10
+	snap.tokenGeneratedTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
+}
+
+func (snap *Snap) CreateVa(createVaRequestDto models.CreateVaRequestDto) models.CreateVaResponseDto {
+	createVaRequestDto.ValidateVaRequestDto()
+	isTokenInvalid := TokenController.IsTokenInvalid(
+		snap.tokenB2B,
+		snap.tokenExpiresIn,
+		snap.tokenGeneratedTimestamp,
+	)
+	if isTokenInvalid {
+		TokenController.GetTokenB2B(
+			snap.PrivateKey,
+			snap.ClientId,
+			snap.IsProduction,
+		)
+	}
+	createVaResponse := VaController.CreateVa(
+		createVaRequestDto,
+		snap.PrivateKey,
+		snap.ClientId,
+		snap.tokenB2B,
+		snap.IsProduction,
+	)
+	return createVaResponse
 }

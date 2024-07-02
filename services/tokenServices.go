@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons"
@@ -21,9 +22,9 @@ import (
 
 var config commons.Config
 
-type TokenService struct{}
+type TokenServices struct{}
 
-func (ts TokenService) GenerateTimestamp() string {
+func (ts TokenServices) GenerateTimestamp() string {
 	now := time.Now()
 	_, offset := now.Zone()
 	offsetHours := offset / 3600
@@ -32,12 +33,11 @@ func (ts TokenService) GenerateTimestamp() string {
 	return timestamp
 }
 
-func (ts TokenService) CreateSignature(privateKeyPem string, clientID string, xTimestamp string) (string, error) {
+func (ts TokenServices) CreateSignature(privateKeyPem string, clientID string, xTimestamp string) (string, error) {
 	block, _ := pem.Decode([]byte(privateKeyPem))
 	if block == nil || block.Type != "PRIVATE KEY" {
 		return "", errors.New("failed to decode PEM block containing private key")
 	}
-
 	privateKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
 		return "", err
@@ -58,7 +58,7 @@ func (ts TokenService) CreateSignature(privateKeyPem string, clientID string, xT
 	return base64.StdEncoding.EncodeToString(signature), err
 }
 
-func (ts TokenService) CreateTokenB2BRequestDTO(signature string, timestamp string, clientId string) models.TokenB2BRequestDTO {
+func (ts TokenServices) CreateTokenB2BRequestDTO(signature string, timestamp string, clientId string) models.TokenB2BRequestDTO {
 	var tokenB2BRequestDTO = models.TokenB2BRequestDTO{
 		Signature: signature,
 		Timestamp: timestamp,
@@ -68,7 +68,7 @@ func (ts TokenService) CreateTokenB2BRequestDTO(signature string, timestamp stri
 	return tokenB2BRequestDTO
 }
 
-func (ts TokenService) CreateTokenB2B(tokenB2BRequestDTO models.TokenB2BRequestDTO, isProduction bool) models.TokenB2BResponseDTO {
+func (ts TokenServices) CreateTokenB2B(tokenB2BRequestDTO models.TokenB2BRequestDTO, isProduction bool) models.TokenB2BResponseDTO {
 
 	baseUrl := config.GetBaseUrl(isProduction) + commons.ACCESS_TOKEN
 
@@ -106,6 +106,23 @@ func (ts TokenService) CreateTokenB2B(tokenB2BRequestDTO models.TokenB2BRequestD
 		fmt.Println("Error reading response body:", err)
 	}
 
-	fmt.Println("Response :", tokenB2BResponse)
 	return tokenB2BResponse
+}
+
+func (ts TokenServices) IsTokenExpired(tokenExpiresIn int, tokenGeneratedTimestamp string) bool {
+
+	now := int(time.Now().Unix())
+
+	timeInt, _ := strconv.Atoi(tokenGeneratedTimestamp)
+	var expirationTime = timeInt + tokenExpiresIn
+
+	if expirationTime < now {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (ts TokenServices) IsTokenEmpty(tokenB2B string) bool {
+	return tokenB2B == ""
 }
