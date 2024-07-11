@@ -10,14 +10,15 @@ import (
 	"time"
 
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons"
-	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models"
+	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
+	updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
 )
 
 var tokenServices TokenServices
 
 type VaServices struct{}
 
-func generateExternalId() string {
+func (vs VaServices) GenerateExternalId() string {
 
 	uuid := fmt.Sprintf("%x-%x-4%x-y%x-%x",
 		rand.Int63n(0x100000000),
@@ -32,30 +33,29 @@ func generateExternalId() string {
 	return externalId
 }
 
-func (vs VaServices) CreateVaRequestHeaderDto(
-	createVaRequestDto models.CreateVaRequestDto,
-	privateKey string,
+func (vs VaServices) GenerateRequestHeaderDto(
+	channelId string,
+	signature string,
 	timestamp string,
 	clientId string,
-	tokenB2B string) models.RequestHeaderDTO {
+	externalId string,
+	tokenB2B string) createVaModels.RequestHeaderDTO {
 
-	var createSignature, _ = tokenServices.CreateSignature(privateKey, clientId, timestamp)
-
-	return models.RequestHeaderDTO{
+	return createVaModels.RequestHeaderDTO{
 		XTimestamp:    timestamp,
-		XSignature:    createSignature,
+		XSignature:    signature,
 		XPartnerId:    clientId,
-		XExternalId:   generateExternalId(),
-		ChannelId:     createVaRequestDto.AdditionalInfo.Channel,
+		XExternalId:   externalId,
+		ChannelId:     channelId,
 		Authorization: tokenB2B,
 	}
 }
 
 func (vs VaServices) CreateVa(
-	requestHeaderDto models.RequestHeaderDTO,
-	createVaRequestDto models.CreateVaRequestDto,
+	requestHeaderDto createVaModels.RequestHeaderDTO,
+	createVaRequestDto createVaModels.CreateVaRequestDto,
 	isProduction bool,
-) models.CreateVaResponseDto {
+) createVaModels.CreateVaResponseDto {
 
 	url := config.GetBaseUrl(isProduction) + commons.CREATE_VA
 
@@ -67,6 +67,14 @@ func (vs VaServices) CreateVa(
 		"X-EXTERNAL-ID": requestHeaderDto.XExternalId,
 		"CHANNEL-ID":    requestHeaderDto.ChannelId,
 		"Content-Type":  "application/json",
+	}
+
+	createVaRequestDto.Origin = createVaModels.Origin{
+		Product:       "SDK",
+		Source:        "Golang",
+		SourceVersion: "1.0.0",
+		System:        "doku-golang-library",
+		ApiFormat:     "SNAP",
 	}
 
 	bodyRequest, err := json.Marshal(createVaRequestDto)
@@ -94,11 +102,57 @@ func (vs VaServices) CreateVa(
 
 	respBody, _ := io.ReadAll(resp.Body)
 	fmt.Println("RESPONSE: ", string(respBody))
-	var createVaResponseDTO models.CreateVaResponseDto
+	var createVaResponseDTO createVaModels.CreateVaResponseDto
 	if err := json.Unmarshal(respBody, &createVaResponseDTO); err != nil {
 		fmt.Println("error unmarshaling response JSON: ", err)
 	}
 
 	return createVaResponseDTO
 
+}
+
+func (vs VaServices) DoUpdateVa(requestHeaderDTO createVaModels.RequestHeaderDTO, updateVaRequestDTO updateVaModels.UpdateVaDTO, isProduction bool) updateVaModels.UpdateVaResponseDTO {
+	url := config.GetBaseUrl(isProduction) + commons.UPDATE_VA
+
+	header := map[string]string{
+		"X-PARTNER-ID":  requestHeaderDTO.XPartnerId,
+		"X-TIMESTAMP":   requestHeaderDTO.XTimestamp,
+		"X-SIGNATURE":   requestHeaderDTO.XSignature,
+		"Authorization": "Bearer " + requestHeaderDTO.Authorization,
+		"X-EXTERNAL-ID": requestHeaderDTO.XExternalId,
+		"CHANNEL-ID":    requestHeaderDTO.ChannelId,
+		"Content-Type":  "application/json",
+	}
+
+	bodyRequest, err := json.Marshal(updateVaRequestDTO)
+	if err != nil {
+		fmt.Println("Error body response :", err)
+	}
+
+	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(bodyRequest))
+	if err != nil {
+		fmt.Println("Error body request :", err)
+	}
+
+	for key, value := range header {
+		req.Header.Set(key, value)
+	}
+
+	client := &http.Client{
+		Timeout: time.Second * 30,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error response :", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+	fmt.Println("RESPONSE: ", string(respBody))
+	var updateVaResponseDTO updateVaModels.UpdateVaResponseDTO
+	if err := json.Unmarshal(respBody, &updateVaResponseDTO); err != nil {
+		fmt.Println("error unmarshaling response JSON: ", err)
+	}
+
+	return updateVaResponseDTO
 }

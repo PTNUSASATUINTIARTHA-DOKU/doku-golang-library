@@ -10,6 +10,14 @@ import (
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons"
 )
 
+type Origin struct {
+	Product       string `json:"product"`
+	Source        string `json:"source"`
+	SourceVersion string `json:"sourceVersion"`
+	System        string `json:"system"`
+	ApiFormat     string `json:"apiFormat"`
+}
+
 type CreateVaRequestDto struct {
 	PartnerServiceId      string         `json:"partnerServiceId"`
 	CustomerNo            *string        `json:"customerNo,omitempty"`
@@ -22,24 +30,10 @@ type CreateVaRequestDto struct {
 	AdditionalInfo        AdditionalInfo `json:"additionalInfo"`
 	VirtualAccountTrxType string         `json:"virtualAccounTrxType"`
 	ExpiredDate           string         `json:"expiredDate"`
+	Origin                Origin         `json:"origin"`
 }
 
-// func catch() {
-// 	if r := recover(); r != nil {
-// 		fmt.Println(r)
-// 	}
-// }
-
-// func (dto *CreateVaRequestDto) ValidateVaRequestDto() bool {
-// 	defer catch()
-// 	if valid, err := dto.ValidateVaRequest(); valid {
-// 		return valid
-// 	} else {
-// 		panic(err.Error())
-// 	}
-// }
-
-func (dto *CreateVaRequestDto) ValidateVaRequestDto() bool {
+func (dto *CreateVaRequestDto) ValidateVaRequestDto() {
 
 	var validationErrors []string
 
@@ -98,9 +92,6 @@ func (dto *CreateVaRequestDto) ValidateVaRequestDto() bool {
 
 	if len(validationErrors) > 0 {
 		panic(errors.New("Validation Failed: \n * " + strings.Join(validationErrors, "\n * ")))
-		// return false
-	} else {
-		return true
 	}
 }
 
@@ -163,9 +154,6 @@ func (dto *CreateVaRequestDto) validateVirtualAccountEmail() (bool, string) {
 }
 
 func (dto *CreateVaRequestDto) validateVirtualAccountPhone() (bool, string) {
-	// if dto.VirtualAccountPhone == "" {
-	// 	return false, "VirtualAccountPhone must be a string. Ensure that virtualAccountPhone is enclosed in quotes. Example: '628123456789'."
-	// }
 	if len(dto.VirtualAccountPhone) < 9 {
 		return false, "VirtualAccountPhone must be at least 9 characters long. Ensure that VirtualAccountPhone is at least 9 characters long. Example: '628123456789'."
 	}
@@ -176,9 +164,6 @@ func (dto *CreateVaRequestDto) validateVirtualAccountPhone() (bool, string) {
 }
 
 func (dto *CreateVaRequestDto) validateTrxId() (bool, string) {
-	// if dto.TrxId == "" {
-	// 	return false, "TrxId must be a string. Ensure that TrxId is enclosed in quotes. Example: '23219829713'."
-	// }
 	if len(dto.TrxId) < 1 {
 		return false, "TrxId must be at least 1 character long. Ensure that TrxId is not empty. Example: '23219829713'."
 	}

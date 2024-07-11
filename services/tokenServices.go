@@ -3,21 +3,26 @@ package services
 import (
 	"bytes"
 	"crypto"
+	"crypto/hmac"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/sha512"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons"
-	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models"
+	tokenModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/token"
+	updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
 )
 
 var config commons.Config
@@ -58,8 +63,25 @@ func (ts TokenServices) CreateSignature(privateKeyPem string, clientID string, x
 	return base64.StdEncoding.EncodeToString(signature), err
 }
 
-func (ts TokenServices) CreateTokenB2BRequestDTO(signature string, timestamp string, clientId string) models.TokenB2BRequestDTO {
-	var tokenB2BRequestDTO = models.TokenB2BRequestDTO{
+func (ts TokenServices) GenerateSymetricSignature(httpMethod, endPointUrl, tokenB2B string, updateVaRequestDto updateVaModels.UpdateVaDTO, timestamp, clientSecret string) string {
+	minifiedRequestBody, err := json.Marshal(updateVaRequestDto)
+	if err != nil {
+		fmt.Println("Error marshalling request body:", err)
+	}
+	minifiedJson := string(minifiedRequestBody)
+	hash := sha256.New()
+	hash.Write([]byte(minifiedJson))
+	lowercaseHexHash := strings.ToLower(hex.EncodeToString(hash.Sum(nil)))
+	strToSign := httpMethod + ":" + endPointUrl + ":" + tokenB2B + ":" + lowercaseHexHash + ":" + timestamp
+	hmac := hmac.New(sha512.New, []byte(clientSecret))
+	hmac.Write([]byte(strToSign))
+	signature := base64.StdEncoding.EncodeToString(hmac.Sum(nil))
+
+	return signature
+}
+
+func (ts TokenServices) CreateTokenB2BRequestDTO(signature string, timestamp string, clientId string) tokenModels.TokenB2BRequestDTO {
+	var tokenB2BRequestDTO = tokenModels.TokenB2BRequestDTO{
 		Signature: signature,
 		Timestamp: timestamp,
 		ClientID:  clientId,
@@ -68,7 +90,7 @@ func (ts TokenServices) CreateTokenB2BRequestDTO(signature string, timestamp str
 	return tokenB2BRequestDTO
 }
 
-func (ts TokenServices) CreateTokenB2B(tokenB2BRequestDTO models.TokenB2BRequestDTO, isProduction bool) models.TokenB2BResponseDTO {
+func (ts TokenServices) CreateTokenB2B(tokenB2BRequestDTO tokenModels.TokenB2BRequestDTO, isProduction bool) tokenModels.TokenB2BResponseDTO {
 
 	baseUrl := config.GetBaseUrl(isProduction) + commons.ACCESS_TOKEN
 
@@ -100,7 +122,7 @@ func (ts TokenServices) CreateTokenB2B(tokenB2BRequestDTO models.TokenB2BRequest
 	}
 	defer res.Body.Close()
 
-	var tokenB2BResponse models.TokenB2BResponseDTO
+	var tokenB2BResponse tokenModels.TokenB2BResponseDTO
 	err = json.NewDecoder(res.Body).Decode(&tokenB2BResponse)
 	if err != nil {
 		fmt.Println("Error reading response body:", err)
