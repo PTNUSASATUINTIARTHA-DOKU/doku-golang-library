@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models"
+	tokenModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/token"
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/services"
 )
 
@@ -9,10 +9,10 @@ var TokenServices services.TokenServices
 
 type TokenController struct{}
 
-func (tc TokenController) GetTokenB2B(privateKey string, clientId string, isProduction bool) models.TokenB2BResponseDTO {
+func (tc TokenController) GetTokenB2B(privateKey string, clientId string, isProduction bool) tokenModels.TokenB2BResponseDTO {
 	var xtimestamp = TokenServices.GenerateTimestamp()
 	var signature, _ = TokenServices.CreateSignature(privateKey, clientId, xtimestamp)
-	var createTokenB2BRequestDTO models.TokenB2BRequestDTO = TokenServices.CreateTokenB2BRequestDTO(signature, xtimestamp, clientId)
+	var createTokenB2BRequestDTO tokenModels.TokenB2BRequestDTO = TokenServices.CreateTokenB2BRequestDTO(signature, xtimestamp, clientId)
 	return TokenServices.CreateTokenB2B(createTokenB2BRequestDTO, isProduction)
 }
 
