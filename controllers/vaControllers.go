@@ -1,7 +1,11 @@
 package controllers
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons"
+	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 	updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/services"
@@ -30,8 +34,27 @@ func (vc VaController) DoUpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO,
 	timeStamp := tokenServices.GenerateTimestamp()
 	endPointUrl := commons.UPDATE_VA
 	httpMethod := "PUT"
-	signature := tokenServices.GenerateSymetricSignature(httpMethod, endPointUrl, tokenB2B, updateVaRequestDTO, timeStamp, secretKey)
+	minifiedRequestBody, err := json.Marshal(updateVaRequestDTO)
+	if err != nil {
+		fmt.Println("Error marshalling request body:", err)
+	}
+	signature := tokenServices.GenerateSymetricSignature(httpMethod, endPointUrl, tokenB2B, minifiedRequestBody, timeStamp, secretKey)
 	externalId := vaServices.GenerateExternalId()
 	header := vaServices.GenerateRequestHeaderDto("SDK", signature, timeStamp, clientId, externalId, tokenB2B)
 	return vaServices.DoUpdateVa(header, updateVaRequestDTO, isProduction)
+}
+
+func (vc VaController) DoCheckStatusVa(checkStatusVARequestDto checkVaModels.CheckStatusVARequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) checkVaModels.CheckStatusVaResponseDto {
+	timeStamp := tokenServices.GenerateTimestamp()
+	// signature, _ := tokenServices.CreateSignature(privateKey, clientId, timeStamp)
+	endPointUrl := commons.CHECK_VA
+	httpMethod := "POST"
+	minifiedRequestBody, err := json.Marshal(checkStatusVARequestDto)
+	if err != nil {
+		fmt.Println("Error marshalling request body:", err)
+	}
+	signature := tokenServices.GenerateSymetricSignature(httpMethod, endPointUrl, tokenB2B, minifiedRequestBody, timeStamp, secretKey)
+	externalId := vaServices.GenerateExternalId()
+	header := vaServices.GenerateRequestHeaderDto("SDK", signature, timeStamp, clientId, externalId, tokenB2B)
+	return vaServices.DoCheckStatusVa(header, checkStatusVARequestDto, isProduction)
 }

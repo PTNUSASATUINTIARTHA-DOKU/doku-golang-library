@@ -22,7 +22,7 @@ import (
 
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons"
 	tokenModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/token"
-	updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
+	// updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
 )
 
 var config commons.Config
@@ -63,11 +63,11 @@ func (ts TokenServices) CreateSignature(privateKeyPem string, clientID string, x
 	return base64.StdEncoding.EncodeToString(signature), err
 }
 
-func (ts TokenServices) GenerateSymetricSignature(httpMethod, endPointUrl, tokenB2B string, updateVaRequestDto updateVaModels.UpdateVaDTO, timestamp, clientSecret string) string {
-	minifiedRequestBody, err := json.Marshal(updateVaRequestDto)
-	if err != nil {
-		fmt.Println("Error marshalling request body:", err)
-	}
+func (ts TokenServices) GenerateSymetricSignature(httpMethod string, endPointUrl string, tokenB2B string, minifiedRequestBody []byte, timestamp, clientSecret string) string {
+	// minifiedRequestBody, err := json.Marshal(updateVaRequestDto)
+	// if err != nil {
+	// 	fmt.Println("Error marshalling request body:", err)
+	// }
 	minifiedJson := string(minifiedRequestBody)
 	hash := sha256.New()
 	hash.Write([]byte(minifiedJson))
