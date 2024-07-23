@@ -6,14 +6,13 @@ import (
 
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/controllers"
 	tokenVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/token"
+	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 	updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
-	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/services"
 )
 
 var TokenController controllers.TokenController
 var VaController controllers.VaController
-var tokenService services.TokenServices
 
 type Snap struct {
 	// ----------------
@@ -82,4 +81,24 @@ func (snap *Snap) UpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO) update
 	updateVaResponse := VaController.DoUpdateVa(updateVaRequestDTO, snap.ClientId, snap.tokenB2B, snap.SecretKey, snap.IsProduction)
 
 	return updateVaResponse
+}
+
+func (snap *Snap) CheckStatusVa(checkStatusVaRequestDto checkVaModels.CheckStatusVARequestDto) checkVaModels.CheckStatusVaResponseDto {
+
+	checkStatusVaRequestDto.ValidateCheckStatusVaRequestDto()
+	isTokenInvalid := TokenController.IsTokenInvalid(
+		snap.tokenB2B,
+		snap.tokenExpiresIn,
+		snap.tokenGeneratedTimestamp,
+	)
+	if isTokenInvalid {
+		TokenController.GetTokenB2B(
+			snap.PrivateKey,
+			snap.ClientId,
+			snap.IsProduction,
+		)
+	}
+	checkStatusVaResponseDTO := VaController.DoCheckStatusVa(checkStatusVaRequestDto, snap.PrivateKey, snap.ClientId, snap.tokenB2B, snap.SecretKey, snap.IsProduction)
+
+	return checkStatusVaResponseDTO
 }

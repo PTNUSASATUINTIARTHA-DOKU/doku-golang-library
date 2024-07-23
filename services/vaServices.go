@@ -10,11 +10,10 @@ import (
 	"time"
 
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons"
+	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 	updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
 )
-
-var tokenServices TokenServices
 
 type VaServices struct{}
 
@@ -155,4 +154,50 @@ func (vs VaServices) DoUpdateVa(requestHeaderDTO createVaModels.RequestHeaderDTO
 	}
 
 	return updateVaResponseDTO
+}
+
+func (vs VaServices) DoCheckStatusVa(requestHeaderDTO createVaModels.RequestHeaderDTO, checkStatusVARequestDto checkVaModels.CheckStatusVARequestDto, isProduction bool) checkVaModels.CheckStatusVaResponseDto {
+	url := config.GetBaseUrl(isProduction) + commons.CHECK_VA
+
+	header := map[string]string{
+		"X-PARTNER-ID":  requestHeaderDTO.XPartnerId,
+		"X-TIMESTAMP":   requestHeaderDTO.XTimestamp,
+		"X-SIGNATURE":   requestHeaderDTO.XSignature,
+		"Authorization": "Bearer " + requestHeaderDTO.Authorization,
+		"X-EXTERNAL-ID": requestHeaderDTO.XExternalId,
+		"CHANNEL-ID":    requestHeaderDTO.ChannelId,
+		"Content-Type":  "application/json",
+	}
+
+	bodyRequest, err := json.Marshal(checkStatusVARequestDto)
+	if err != nil {
+		fmt.Println("Error body response :", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(bodyRequest))
+	if err != nil {
+		fmt.Println("Error body request :", err)
+	}
+
+	for key, value := range header {
+		req.Header.Set(key, value)
+	}
+
+	client := &http.Client{
+		Timeout: time.Second * 30,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error response :", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+	fmt.Println("RESPONSE: ", string(respBody))
+	var checkStatusVaResponseDTO checkVaModels.CheckStatusVaResponseDto
+	if err := json.Unmarshal(respBody, &checkStatusVaResponseDTO); err != nil {
+		fmt.Println("error unmarshaling response JSON: ", err)
+	}
+
+	return checkStatusVaResponseDTO
 }
