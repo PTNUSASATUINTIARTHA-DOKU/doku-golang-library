@@ -46,7 +46,6 @@ func (vc VaController) DoUpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO,
 
 func (vc VaController) DoCheckStatusVa(checkStatusVARequestDto checkVaModels.CheckStatusVARequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) checkVaModels.CheckStatusVaResponseDto {
 	timeStamp := tokenServices.GenerateTimestamp()
-	// signature, _ := tokenServices.CreateSignature(privateKey, clientId, timeStamp)
 	endPointUrl := commons.CHECK_VA
 	httpMethod := "POST"
 	minifiedRequestBody, err := json.Marshal(checkStatusVARequestDto)

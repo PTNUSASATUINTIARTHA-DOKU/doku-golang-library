@@ -22,7 +22,8 @@ import (
 
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons"
 	tokenModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/token"
-	// updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
+	notificationTokenModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/notification/token"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 var config commons.Config
@@ -63,11 +64,15 @@ func (ts TokenServices) CreateSignature(privateKeyPem string, clientID string, x
 	return base64.StdEncoding.EncodeToString(signature), err
 }
 
+func (ts TokenServices) CompareSignature(requestSignature string, newSignature string) bool {
+	if requestSignature == newSignature {
+		return true
+	} else {
+		return false
+	}
+}
+
 func (ts TokenServices) GenerateSymetricSignature(httpMethod string, endPointUrl string, tokenB2B string, minifiedRequestBody []byte, timestamp, clientSecret string) string {
-	// minifiedRequestBody, err := json.Marshal(updateVaRequestDto)
-	// if err != nil {
-	// 	fmt.Println("Error marshalling request body:", err)
-	// }
 	minifiedJson := string(minifiedRequestBody)
 	hash := sha256.New()
 	hash.Write([]byte(minifiedJson))
@@ -131,6 +136,22 @@ func (ts TokenServices) CreateTokenB2B(tokenB2BRequestDTO tokenModels.TokenB2BRe
 	return tokenB2BResponse
 }
 
+func (ts TokenServices) ValidateTokenB2B(requestTokenB2B string, publicKey string) bool {
+	_, err := jwt.Parse(requestTokenB2B, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return publicKey, nil
+	})
+
+	if err != nil {
+		fmt.Println("Invalid token:", err)
+		return false
+	}
+
+	return true
+}
+
 func (ts TokenServices) IsTokenExpired(tokenExpiresIn int, tokenGeneratedTimestamp string) bool {
 
 	now := int(time.Now().Unix())
@@ -147,4 +168,61 @@ func (ts TokenServices) IsTokenExpired(tokenExpiresIn int, tokenGeneratedTimesta
 
 func (ts TokenServices) IsTokenEmpty(tokenB2B string) bool {
 	return tokenB2B == ""
+}
+
+func (ts TokenServices) GenerateToken(expiredIn int64, issuer string, privateKey string, clientId string) string {
+	expiration := time.Now().Unix() + expiredIn
+	payload := jwt.MapClaims{
+		"exp":      expiration,
+		"issuer":   issuer,
+		"clientId": clientId,
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, payload)
+	tokenString, err := token.SignedString(privateKey)
+	if err != nil {
+		fmt.Println("Error when convert token to string:", err)
+	}
+	return tokenString
+}
+
+func (ts TokenServices) GenerateNotificationTokenDTO(token string, timestamp string, clientId string, expiresIn int) notificationTokenModels.NotificationTokenDTO {
+	var tokenHeader = notificationTokenModels.NotificationTokenHeaderDTO{
+		XClientKey: clientId,
+		XTimeStamp: timestamp,
+	}
+
+	var tokenBody = notificationTokenModels.NotificationTokenBodyDTO{
+		ResponseCode:    "2007300",
+		ResponseMessage: "Successful",
+		AccessToken:     token,
+		TokenType:       "Bearer",
+		ExpiresIn:       expiresIn,
+		AdditionalInfo:  "",
+	}
+
+	var response = notificationTokenModels.NotificationTokenDTO{
+		NotificationTokenHeaderDTO: tokenHeader,
+		NotificationTokenBodyDTO:   tokenBody,
+	}
+	return response
+}
+
+func (ts TokenServices) GenerateInvalidSignature(timestamp string) notificationTokenModels.NotificationTokenDTO {
+	var tokenHeader = notificationTokenModels.NotificationTokenHeaderDTO{
+		XClientKey: "",
+		XTimeStamp: timestamp,
+	}
+	var tokenBody = notificationTokenModels.NotificationTokenBodyDTO{
+		ResponseCode:    "4017300",
+		ResponseMessage: "Unauthorized.Invalid Signature",
+		AccessToken:     "",
+		TokenType:       "",
+		ExpiresIn:       0,
+		AdditionalInfo:  "",
+	}
+	var response = notificationTokenModels.NotificationTokenDTO{
+		NotificationTokenHeaderDTO: tokenHeader,
+		NotificationTokenBodyDTO:   tokenBody,
+	}
+	return response
 }
