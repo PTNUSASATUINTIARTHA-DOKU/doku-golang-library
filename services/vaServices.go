@@ -3,13 +3,16 @@ package services
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons"
+	inquiryModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/converter"
 	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 	updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
@@ -200,4 +203,84 @@ func (vs VaServices) DoCheckStatusVa(requestHeaderDTO createVaModels.RequestHead
 	}
 
 	return checkStatusVaResponseDTO
+}
+
+func (vs VaServices) V1SnapConverter(xmlData []byte) (map[string]interface{}, error) {
+	var xmlResponse inquiryModels.InquiryResponse
+	var response map[string]interface{}
+
+	err := xml.Unmarshal(xmlData, &xmlResponse)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshaling XML: %v", err)
+	}
+
+	response = map[string]interface{}{
+		"virtualAccountData": map[string]interface{}{
+			"additionalInfo": map[string]interface{}{
+				"trxId": xmlResponse.TransIdMerchant,
+				"virtualAccountConfig": map[string]interface{}{
+					"minAmount": xmlResponse.MinAmount,
+					"maxAmount": xmlResponse.MaxAmount,
+				},
+			},
+			"totalAmount": map[string]interface{}{
+				"value":    xmlResponse.Amount,
+				"currency": xmlResponse.Currency,
+			},
+			"virtualAccountName":  xmlResponse.Name,
+			"virtualAccountEmail": xmlResponse.Email,
+			"virtualAccountNo":    xmlResponse.PaymentCode,
+			"customerNo":          xmlResponse.PaymentCode,
+		},
+		"responseCode": xmlResponse.ResponseCode,
+	}
+
+	return response, nil
+}
+
+func (vs VaServices) SnapV1Converter(jsonData []byte) (string, error) {
+	var data map[string]interface{}
+	err := json.Unmarshal(jsonData, &data)
+	if err != nil {
+		return "", fmt.Errorf("error unmarshaling JSON: %v", err)
+	}
+
+	vaData, ok := data["virtualAccountData"].(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("virtualAccountData not found")
+	}
+
+	additionalInfo, ok := vaData["additionalInfo"].(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("additionalInfo not found")
+	}
+
+	form := url.Values{}
+	if partnerServiceId, ok := vaData["partnerServiceId"].(string); ok {
+		form.Set("MALLID", partnerServiceId)
+	} else {
+		return "", fmt.Errorf("partnerServiceId not found or is not a string")
+	}
+
+	if channel, ok := additionalInfo["channel"].(string); ok {
+		form.Set("PAYMENTCHANNEL", channel)
+	} else {
+		return "", fmt.Errorf("channel not found or is not a string")
+	}
+
+	if paymentCode, ok := vaData["virtualAccountNo"].(string); ok {
+		form.Set("PAYMENTCODE", paymentCode)
+	} else {
+		return "", fmt.Errorf("virtualAccountNo not found or is not a string")
+	}
+
+	form.Set("STATUSTYPE", "/")
+
+	if inquiryRequestId, ok := vaData["inquiryRequestId"].(string); ok {
+		form.Set("OCOID", inquiryRequestId)
+	} else {
+		return "", fmt.Errorf("inquiryRequestId not found or is not a string")
+	}
+
+	return form.Encode(), nil
 }
