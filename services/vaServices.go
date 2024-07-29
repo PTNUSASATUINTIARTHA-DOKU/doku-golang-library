@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons"
+	vaChannels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons"
 	inquiryModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/converter"
 	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
@@ -214,6 +215,19 @@ func (vs VaServices) V1SnapConverter(xmlData []byte) (map[string]interface{}, er
 		return nil, fmt.Errorf("error unmarshaling XML: %v", err)
 	}
 
+	switch xmlResponse.ResponseCode {
+	case "0000":
+		xmlResponse.ResponseCode = "2002400"
+	case "3000", "3001", "3006":
+		xmlResponse.ResponseCode = "4042412"
+	case "3002":
+		xmlResponse.ResponseCode = "4042414"
+	case "3004":
+		xmlResponse.ResponseCode = "4032400"
+	case "9999":
+		xmlResponse.ResponseCode = "5002401"
+	}
+
 	response = map[string]interface{}{
 		"virtualAccountData": map[string]interface{}{
 			"additionalInfo": map[string]interface{}{
@@ -262,11 +276,13 @@ func (vs VaServices) SnapV1Converter(jsonData []byte) (string, error) {
 		return "", fmt.Errorf("partnerServiceId not found or is not a string")
 	}
 
-	if channel, ok := additionalInfo["channel"].(string); ok {
-		form.Set("PAYMENTCHANNEL", channel)
-	} else {
+	channel, ok := additionalInfo["channel"].(string)
+	if !ok {
 		return "", fmt.Errorf("channel not found or is not a string")
 	}
+
+	v1ChannelId := vaChannels.GetVAChannelIdV1(channel)
+	form.Set("PAYMENTCHANNEL", v1ChannelId)
 
 	if paymentCode, ok := vaData["virtualAccountNo"].(string); ok {
 		form.Set("PAYMENTCODE", paymentCode)

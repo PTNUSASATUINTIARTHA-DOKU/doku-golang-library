@@ -48,3 +48,38 @@ func ValidateVAChannel(channel string) bool {
 	}
 	return false
 }
+
+func GetVAChannelIdV1(channel string) string {
+	switch channel {
+	case VAChannelNames[VIRTUAL_ACCOUNT_BCA]:
+		return "29"
+	case VAChannelNames[VIRTUAL_ACCOUNT_BANK_MANDIRI]:
+		return "08"
+	case VAChannelNames[VIRTUAL_ACCOUNT_BRI]:
+		return "34"
+	case VAChannelNames[VIRTUAL_ACCOUNT_BNI]:
+		return "38"
+	case VAChannelNames[VIRTUAL_ACCOUNT_BANK_DANAMON]:
+		return "33"
+	case VAChannelNames[VIRTUAL_ACCOUNT_BANK_PERMATA]:
+		return "05"
+	case VAChannelNames[VIRTUAL_ACCOUNT_MAYBANK]:
+		return "44"
+	case VAChannelNames[VIRTUAL_ACCOUNT_BNC]:
+		return "-"
+	case VAChannelNames[VIRTUAL_ACCOUNT_BTN]:
+		return "43"
+	case VAChannelNames[VIRTUAL_ACCOUNT_BSI]:
+		return "-"
+	case VAChannelNames[VIRTUAL_ACCOUNT_BANK_CIMB]:
+		return "32"
+	case VAChannelNames[VIRTUAL_ACCOUNT_SINARMAS]:
+		return "21"
+	case VAChannelNames[VIRTUAL_ACCOUNT_DOKU]:
+		return "47"
+	case VAChannelNames[VIRTUAL_ACCOUNT_BSS]:
+		return "-"
+	default:
+		return ""
+	}
+}
