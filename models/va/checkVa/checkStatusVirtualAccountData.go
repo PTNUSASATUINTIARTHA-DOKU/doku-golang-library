@@ -9,6 +9,7 @@ type CheckStatusVirtualAccountData struct {
 	PartnerServiceId     string                               `json:"partnerServiceId"`
 	CustomerNo           string                               `json:"customerNo"`
 	VirtualAccountNo     string                               `json:"virtualAccountNo"`
+	TrxId                string                               `json:"trxId"`
 	InquiryRequestId     *string                              `json:"inquiryRequestId"`
 	PaymentRequestId     *string                              `json:"paymentRequestId"`
 	VirtualAccountNumber *string                              `json:"virtualAccountNumber"`

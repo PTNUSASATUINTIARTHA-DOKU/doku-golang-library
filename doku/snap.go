@@ -9,6 +9,7 @@ import (
 	tokenVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/token"
 	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
+	deleteVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/deleteVa"
 	notificationTokenModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/notification/token"
 	updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
 )
@@ -103,6 +104,26 @@ func (snap *Snap) CheckStatusVa(checkStatusVaRequestDto checkVaModels.CheckStatu
 	checkStatusVaResponseDTO := VaController.DoCheckStatusVa(checkStatusVaRequestDto, snap.PrivateKey, snap.ClientId, snap.tokenB2B, snap.SecretKey, snap.IsProduction)
 
 	return checkStatusVaResponseDTO
+}
+
+func (snap *Snap) DeletePaymentCode(deleteVaRequestDto deleteVaModels.DeleteVaRequestDto) deleteVaModels.DeleteVaResponseDto {
+
+	deleteVaRequestDto.ValidateDeleteVaRequest()
+	isTokenInvalid := TokenController.IsTokenInvalid(
+		snap.tokenB2B,
+		snap.tokenExpiresIn,
+		snap.tokenGeneratedTimestamp,
+	)
+	if isTokenInvalid {
+		TokenController.GetTokenB2B(
+			snap.PrivateKey,
+			snap.ClientId,
+			snap.IsProduction,
+		)
+	}
+	deleteVaResponseDto := VaController.DoDeletePaymentCode(deleteVaRequestDto, snap.PrivateKey, snap.ClientId, snap.tokenB2B, snap.SecretKey, snap.IsProduction)
+
+	return deleteVaResponseDto
 }
 
 func (snap *Snap) generateTokenB2B(isSignatureValid bool) notificationTokenModels.NotificationTokenDTO {

@@ -16,6 +16,7 @@ import (
 	inquiryModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/converter"
 	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
+	deleteVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/deleteVa"
 	updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
 )
 
@@ -204,6 +205,52 @@ func (vs VaServices) DoCheckStatusVa(requestHeaderDTO createVaModels.RequestHead
 	}
 
 	return checkStatusVaResponseDTO
+}
+
+func (vs VaServices) DoDeletePaymentCode(requestHeaderDTO createVaModels.RequestHeaderDTO, deleteVaRequestDto deleteVaModels.DeleteVaRequestDto, isProduction bool) deleteVaModels.DeleteVaResponseDto {
+	url := config.GetBaseUrl(isProduction) + commons.DELETE_VA
+
+	header := map[string]string{
+		"X-PARTNER-ID":  requestHeaderDTO.XPartnerId,
+		"X-TIMESTAMP":   requestHeaderDTO.XTimestamp,
+		"X-SIGNATURE":   requestHeaderDTO.XSignature,
+		"Authorization": "Bearer " + requestHeaderDTO.Authorization,
+		"X-EXTERNAL-ID": requestHeaderDTO.XExternalId,
+		"CHANNEL-ID":    requestHeaderDTO.ChannelId,
+		"Content-Type":  "application/json",
+	}
+
+	bodyRequest, err := json.Marshal(deleteVaRequestDto)
+	if err != nil {
+		fmt.Println("Error body response :", err)
+	}
+
+	req, err := http.NewRequest("DELETE", url, bytes.NewBuffer(bodyRequest))
+	if err != nil {
+		fmt.Println("Error body request :", err)
+	}
+
+	for key, value := range header {
+		req.Header.Set(key, value)
+	}
+
+	client := &http.Client{
+		Timeout: time.Second * 30,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error response :", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+	fmt.Println("RESPONSE: ", string(respBody))
+	var deleteVaResponseDto deleteVaModels.DeleteVaResponseDto
+	if err := json.Unmarshal(respBody, &deleteVaResponseDto); err != nil {
+		fmt.Println("error unmarshaling response JSON: ", err)
+	}
+
+	return deleteVaResponseDto
 }
 
 func (vs VaServices) V1SnapConverter(xmlData []byte) (map[string]interface{}, error) {

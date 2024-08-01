@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,8 +13,8 @@ import (
 
 type UpdateVaDTO struct {
 	PartnerServiceId      string                     `json:"partnerServiceId"`
-	CustomerNo            *string                    `json:"customerNo,omitempty"`
-	VirtualAccountNo      *string                    `json:"virtualAccountNo,omitempty"`
+	CustomerNo            string                     `json:"customerNo"`
+	VirtualAccountNo      string                     `json:"virtualAccountNo"`
 	VirtualAccountName    string                     `json:"virtualAccountName"`
 	VirtualAccountEmail   string                     `json:"virtualAccountEmail"`
 	VirtualAccountPhone   string                     `json:"virtualAccountPhone"`
@@ -28,17 +29,19 @@ func (dto *UpdateVaDTO) ValidateUpdateVaRequestDTO() {
 
 	var validationErrors []string
 
+	var isMinAmountValid bool = false
+	var isMaxAmountValid bool = false
+
 	if valid, message := dto.validatePartnerServiceId(); !valid {
 		validationErrors = append(validationErrors, message)
 	}
 
-	if dto.CustomerNo != nil {
-		if valid, message := dto.validateCustomerNo(); !valid {
-			validationErrors = append(validationErrors, message)
-		}
-		if valid, message := dto.validateVirtualAccountNo(); !valid {
-			validationErrors = append(validationErrors, message)
-		}
+	if valid, message := dto.validateCustomerNo(); !valid {
+		validationErrors = append(validationErrors, message)
+	}
+
+	if valid, message := dto.validateVirtualAccountNo(); !valid {
+		validationErrors = append(validationErrors, message)
 	}
 
 	if valid, message := dto.validateVirtualAccountName(); !valid {
@@ -73,6 +76,33 @@ func (dto *UpdateVaDTO) ValidateUpdateVaRequestDTO() {
 		validationErrors = append(validationErrors, message)
 	}
 
+	if dto.AdditionalInfo.VirtualAccountConfig.MaxAmount != nil {
+		if valid, message := dto.validateMaxAmount(); !valid {
+			validationErrors = append(validationErrors, message)
+		} else {
+			isMaxAmountValid = valid
+		}
+	}
+
+	if dto.AdditionalInfo.VirtualAccountConfig.MinAmount != nil {
+		if valid, message := dto.validateMinAmount(); !valid {
+			validationErrors = append(validationErrors, message)
+		} else {
+			isMinAmountValid = valid
+		}
+	}
+
+	if dto.AdditionalInfo.VirtualAccountConfig.MinAmount != nil && dto.AdditionalInfo.VirtualAccountConfig.MaxAmount != nil {
+		if valid, message := dto.validateTrxTypeIsOpen(); !valid {
+			validationErrors = append(validationErrors, message)
+		}
+		if isMaxAmountValid && isMinAmountValid {
+			if valid, message := dto.validateMinAmountIsLessThanMaxAmount(); !valid {
+				validationErrors = append(validationErrors, message)
+			}
+		}
+	}
+
 	if valid, message := dto.validateVirtualAccountTrxType(); !valid {
 		validationErrors = append(validationErrors, message)
 	}
@@ -97,22 +127,23 @@ func (dto *UpdateVaDTO) validatePartnerServiceId() (bool, string) {
 }
 
 func (dto *UpdateVaDTO) validateCustomerNo() (bool, string) {
-	if len(*dto.CustomerNo) > 20 {
+	if dto.CustomerNo == "" {
+		return false, "CustomerNo cannot be null. Please provide a CustomerNo. Example: '00000000000000000001'."
+	}
+	if len(dto.CustomerNo) > 20 {
 		return false, "CustomerNo must be 20 characters or fewer. Ensure that customerNo is no longer than 20 characters. Example: '00000000000000000001'."
 	}
-	if !regexp.MustCompile(`^\d+$`).MatchString(*dto.CustomerNo) {
+	if !regexp.MustCompile(`^\d+$`).MatchString(dto.CustomerNo) {
 		return false, "CustomerNo must consist of only digits. Ensure that customerNo contains only numbers. Example: '00000000000000000001'."
 	}
 	return true, ""
 }
 
 func (dto *UpdateVaDTO) validateVirtualAccountNo() (bool, string) {
-	customerNo := *dto.CustomerNo
-	virtualAccountNo := *dto.VirtualAccountNo
-	if dto.VirtualAccountNo == nil {
+	if dto.VirtualAccountNo == "" {
 		return false, "VirtualAccountNo cannot be null. Please provide a virtualAccountNo. Example: '  88899400000000000000000001'."
 	}
-	if virtualAccountNo != dto.PartnerServiceId+customerNo {
+	if dto.VirtualAccountNo != dto.PartnerServiceId+dto.CustomerNo {
 		return false, "VirtualAccountNo must be the concatenation of partnerServiceId and customerNo. Example: ' 88899400000000000000000001' (where partnerServiceId is ' 888994' and customerNo is '00000000000000000001')."
 	}
 	return true, ""
@@ -171,7 +202,7 @@ func (dto *UpdateVaDTO) validateValue() (bool, string) {
 	if len(dto.TotalAmount.Value) > 19 {
 		return false, "TotalAmount.Value must be 19 characters or fewer and formatted as 9999999999999999.99. Ensure that TotalAmount.Value is no longer than 19 characters and in the correct format. Example: '9999999999999999.99'."
 	}
-	if !regexp.MustCompile(`^(0|[1-9]\d{0,15})(\.\d{2})?$`).MatchString(dto.TotalAmount.Value) {
+	if !regexp.MustCompile(`^(0|[1-9]\d{0,15}\.\d{2})?$`).MatchString(dto.TotalAmount.Value) {
 		return false, "TotalAmount.Value is invalid format."
 	}
 	return true, ""
@@ -205,23 +236,69 @@ func (dto *UpdateVaDTO) validateChannel() (bool, string) {
 
 func (dto *UpdateVaDTO) validateStatus() (bool, string) {
 	if len(dto.AdditionalInfo.VirtualAccountConfig.Status) <= 1 {
-		return false, "status must be at least 1 character long. Ensure that status is not empty. Example: ‘INACTIVE’."
+		return false, "status must be at least 1 character long. Ensure that status is not empty. Example: 'INACTIVE'."
 	}
 	if len(dto.AdditionalInfo.VirtualAccountConfig.Status) >= 20 {
-		return false, "status must be 20 characters or fewer. Ensure that status is no longer than 20 characters. Example: ‘INACTIVE’."
+		return false, "status must be 20 characters or fewer. Ensure that status is no longer than 20 characters. Example: 'INACTIVE'."
 	}
 	if !(dto.AdditionalInfo.VirtualAccountConfig.Status == "ACTIVE" || dto.AdditionalInfo.VirtualAccountConfig.Status == "INACTIVE") {
-		return false, "status must be either 'ACTIVE' or 'INACTIVE'. Ensure that status is one of these values. Example: ‘INACTIVE’."
+		return false, "status must be either 'ACTIVE' or 'INACTIVE'. Ensure that status is one of these values. Example: 'INACTIVE'."
+	}
+	return true, ""
+}
+
+func (dto *UpdateVaDTO) validateMaxAmount() (bool, string) {
+	maxAmount := *dto.AdditionalInfo.VirtualAccountConfig.MaxAmount
+	if len(maxAmount) < 4 {
+		return false, "MaxAmount must be at least 4 characters long and formatted as 0.00. Ensure that MaxAmount is at least 4 characters long and in the correct format. Example: '100.00'."
+	}
+	if len(maxAmount) > 19 {
+		return false, "MaxAmount must be 19 characters or fewer and formatted as 9999999999999999.99. Ensure that MaxAmount is no longer than 19 characters and in the correct format. Example: '9999999999999999.99'."
+	}
+	if !regexp.MustCompile(`^(0|[1-9]\d{0,15}\.\d{2})?$`).MatchString(maxAmount) {
+		return false, "MaxAmount is invalid format."
+	}
+	return true, ""
+}
+
+func (dto *UpdateVaDTO) validateMinAmount() (bool, string) {
+	minAmount := *dto.AdditionalInfo.VirtualAccountConfig.MinAmount
+	if len(minAmount) < 4 {
+		return false, "MinAmount must be at least 4 characters long and formatted as 0.00. Ensure that MinAmount is at least 4 characters long and in the correct format. Example: '100.00'."
+	}
+	if len(minAmount) > 19 {
+		return false, "MinAmount must be 19 characters or fewer and formatted as 9999999999999999.99. Ensure that MinAmount is no longer than 19 characters and in the correct format. Example: '9999999999999999.99'."
+	}
+	if !regexp.MustCompile(`^(0|[1-9]\d{0,15}\.\d{2})?$`).MatchString(minAmount) {
+		return false, "MinAmount is invalid format."
+	}
+	return true, ""
+}
+
+func (dto *UpdateVaDTO) validateTrxTypeIsOpen() (bool, string) {
+	if dto.VirtualAccountTrxType != "O" && dto.VirtualAccountTrxType != "V" {
+		return false, "Only supported for virtualAccountTrxType O and V only"
+	}
+	return true, ""
+}
+
+func (dto *UpdateVaDTO) validateMinAmountIsLessThanMaxAmount() (bool, string) {
+	minAmount := *dto.AdditionalInfo.VirtualAccountConfig.MinAmount
+	maxAmount := *dto.AdditionalInfo.VirtualAccountConfig.MaxAmount
+	floatMinAmount, _ := strconv.ParseFloat(minAmount, 64)
+	floatMaxAmount, _ := strconv.ParseFloat(maxAmount, 64)
+	if floatMinAmount >= floatMaxAmount {
+		return false, "MaxAmount cannot be lesser than or equal to MinAmount"
 	}
 	return true, ""
 }
 
 func (dto *UpdateVaDTO) validateVirtualAccountTrxType() (bool, string) {
 	if len(dto.VirtualAccountTrxType) != 1 {
-		return false, "VirtualAccountTrxType must be exactly 1 character long. Ensure that VirtualAccountTrxType is either '1' or '2'. Example: '1'."
+		return false, "VirtualAccountTrxType must be exactly 1 character long. Ensure that VirtualAccountTrxType is either 'C', 'O' or 'V'. Example: 'C'."
 	}
-	if !(dto.VirtualAccountTrxType == "1" || dto.VirtualAccountTrxType == "2") {
-		return false, "VirtualAccountTrxType must be either '1' or '2'. Ensure that VirtualAccountTrxType is one of these values. Example: '1'."
+	if !(dto.VirtualAccountTrxType == "C" || dto.VirtualAccountTrxType == "O" || dto.VirtualAccountTrxType == "V") {
+		return false, "VirtualAccountTrxType must be either 'C', 'O' or 'V'. Ensure that VirtualAccountTrxType is one of these values. Example: 'C'."
 	}
 	return true, ""
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons"
 	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
+	deleteVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/deleteVa"
 	updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/services"
 )
@@ -56,4 +57,18 @@ func (vc VaController) DoCheckStatusVa(checkStatusVARequestDto checkVaModels.Che
 	externalId := vaServices.GenerateExternalId()
 	header := vaServices.GenerateRequestHeaderDto("SDK", signature, timeStamp, clientId, externalId, tokenB2B)
 	return vaServices.DoCheckStatusVa(header, checkStatusVARequestDto, isProduction)
+}
+
+func (vc VaController) DoDeletePaymentCode(deleteVaRequestDto deleteVaModels.DeleteVaRequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) deleteVaModels.DeleteVaResponseDto {
+	timeStamp := tokenServices.GenerateTimestamp()
+	endPointUrl := commons.DELETE_VA
+	httpMethod := "DELETE"
+	minifiedRequestBody, err := json.Marshal(deleteVaRequestDto)
+	if err != nil {
+		fmt.Println("Error marshalling request body:", err)
+	}
+	signature := tokenServices.GenerateSymetricSignature(httpMethod, endPointUrl, tokenB2B, minifiedRequestBody, timeStamp, secretKey)
+	externalId := vaServices.GenerateExternalId()
+	header := vaServices.GenerateRequestHeaderDto("SDK", signature, timeStamp, clientId, externalId, tokenB2B)
+	return vaServices.DoDeletePaymentCode(header, deleteVaRequestDto, isProduction)
 }
