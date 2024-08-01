@@ -228,6 +228,10 @@ func (vs VaServices) V1SnapConverter(xmlData []byte) (map[string]interface{}, er
 		xmlResponse.ResponseCode = "5002401"
 	}
 
+	if xmlResponse.Currency >= "360" {
+		xmlResponse.Currency = "IDR"
+	}
+
 	response = map[string]interface{}{
 		"virtualAccountData": map[string]interface{}{
 			"additionalInfo": map[string]interface{}{
