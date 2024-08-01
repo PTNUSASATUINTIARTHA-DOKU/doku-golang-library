@@ -1,6 +1,7 @@
 package doku
 
 import (
+	"net/http"
 	"strconv"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 	deleteVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/deleteVa"
+	notificationTokenModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/notification/token"
 	updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
 )
 
@@ -122,4 +124,25 @@ func (snap *Snap) DeletePaymentCode(deleteVaRequestDto deleteVaModels.DeleteVaRe
 	deleteVaResponseDto := VaController.DoDeletePaymentCode(deleteVaRequestDto, snap.PrivateKey, snap.ClientId, snap.tokenB2B, snap.SecretKey, snap.IsProduction)
 
 	return deleteVaResponseDto
+}
+
+func (snap *Snap) generateTokenB2B(isSignatureValid bool) notificationTokenModels.NotificationTokenDTO {
+	if isSignatureValid {
+		return TokenController.GenerateTokenB2B(snap.tokenExpiresIn, snap.Issuer, snap.PrivateKey, snap.ClientId)
+	} else {
+		return TokenController.GenerateInvalidSignatureResponse()
+	}
+}
+
+func (snap *Snap) ValidateTokenB2B(requestTokenB2B string) bool {
+	return TokenController.ValidateTokenB2B(requestTokenB2B, snap.PublicKey)
+}
+
+func (snap *Snap) validateSignature(request *http.Request) bool {
+	return TokenController.ValidateSignature(request, snap.PrivateKey, snap.ClientId)
+}
+
+func (snap *Snap) ValidateSignatureAndGenerateToken(request *http.Request) notificationTokenModels.NotificationTokenDTO {
+	var isSignatureValid = snap.validateSignature(request)
+	return snap.generateTokenB2B(isSignatureValid)
 }
