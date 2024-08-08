@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons"
+	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons/utils"
 	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 	deleteVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/deleteVa"
@@ -14,12 +15,13 @@ import (
 
 var vaServices services.VaServices
 var tokenServices services.TokenServices
+var snapUtils utils.SnapUtils
 
 type VaController struct{}
 
 func (vc VaController) CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto, privateKey string, clientId string, tokenB2B string, isProduction bool) createVaModels.CreateVaResponseDto {
 	timeStamp := tokenServices.GenerateTimestamp()
-	externalId := vaServices.GenerateExternalId()
+	externalId := snapUtils.GenerateExternalId()
 	signature, _ := tokenServices.CreateSignature(privateKey, clientId, timeStamp)
 	requestHeader := vaServices.GenerateRequestHeaderDto("SDK", signature, timeStamp, clientId, externalId, tokenB2B)
 
@@ -40,7 +42,7 @@ func (vc VaController) DoUpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO,
 		fmt.Println("Error marshalling request body:", err)
 	}
 	signature := tokenServices.GenerateSymetricSignature(httpMethod, endPointUrl, tokenB2B, minifiedRequestBody, timeStamp, secretKey)
-	externalId := vaServices.GenerateExternalId()
+	externalId := snapUtils.GenerateExternalId()
 	header := vaServices.GenerateRequestHeaderDto("SDK", signature, timeStamp, clientId, externalId, tokenB2B)
 	return vaServices.DoUpdateVa(header, updateVaRequestDTO, isProduction)
 }
@@ -54,7 +56,7 @@ func (vc VaController) DoCheckStatusVa(checkStatusVARequestDto checkVaModels.Che
 		fmt.Println("Error marshalling request body:", err)
 	}
 	signature := tokenServices.GenerateSymetricSignature(httpMethod, endPointUrl, tokenB2B, minifiedRequestBody, timeStamp, secretKey)
-	externalId := vaServices.GenerateExternalId()
+	externalId := snapUtils.GenerateExternalId()
 	header := vaServices.GenerateRequestHeaderDto("SDK", signature, timeStamp, clientId, externalId, tokenB2B)
 	return vaServices.DoCheckStatusVa(header, checkStatusVARequestDto, isProduction)
 }
@@ -68,7 +70,7 @@ func (vc VaController) DoDeletePaymentCode(deleteVaRequestDto deleteVaModels.Del
 		fmt.Println("Error marshalling request body:", err)
 	}
 	signature := tokenServices.GenerateSymetricSignature(httpMethod, endPointUrl, tokenB2B, minifiedRequestBody, timeStamp, secretKey)
-	externalId := vaServices.GenerateExternalId()
+	externalId := snapUtils.GenerateExternalId()
 	header := vaServices.GenerateRequestHeaderDto("SDK", signature, timeStamp, clientId, externalId, tokenB2B)
 	return vaServices.DoDeletePaymentCode(header, deleteVaRequestDto, isProduction)
 }

@@ -6,13 +6,11 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons"
-	vaChannels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons"
 	inquiryModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/converter"
 	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
@@ -21,21 +19,6 @@ import (
 )
 
 type VaServices struct{}
-
-func (vs VaServices) GenerateExternalId() string {
-
-	uuid := fmt.Sprintf("%x-%x-4%x-y%x-%x",
-		rand.Int63n(0x100000000),
-		rand.Int63n(0x10000),
-		rand.Int63n(0x1000),
-		rand.Int63n(0x1000),
-		rand.Int63n(0x1000000000000),
-	)
-
-	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
-	externalId := fmt.Sprintf("%s-%d", uuid, timestamp)
-	return externalId
-}
 
 func (vs VaServices) GenerateRequestHeaderDto(
 	channelId string,
@@ -332,7 +315,7 @@ func (vs VaServices) SnapV1Converter(jsonData []byte) (string, error) {
 		return "", fmt.Errorf("channel not found or is not a string")
 	}
 
-	v1ChannelId := vaChannels.GetVAChannelIdV1(channel)
+	v1ChannelId := commons.GetVAChannelIdV1(channel)
 	form.Set("PAYMENTCHANNEL", v1ChannelId)
 
 	if paymentCode, ok := vaData["virtualAccountNo"].(string); ok {

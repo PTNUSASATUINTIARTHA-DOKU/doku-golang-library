@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons"
+	vaChannel "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons"
 )
 
 type Origin struct {
@@ -237,7 +237,7 @@ func (dto *CreateVaRequestDto) validateChannel() (bool, string) {
 	if len(dto.AdditionalInfo.Channel) > 30 {
 		return false, "AdditionalInfo.Channel must be 30 characters or fewer. Ensure that AdditionalInfo.Channel is no longer than 30 characters. Example: 'VIRTUAL_ACCOUNT_MANDIRI'."
 	}
-	if !commons.ValidateVAChannel(dto.AdditionalInfo.Channel) {
+	if !vaChannel.ValidateVAChannel(dto.AdditionalInfo.Channel) {
 		return false, "AdditionalInfo.channel is not valid. Ensure that AdditionalInfo.channel is one of the valid channels. Example: 'VIRTUAL_ACCOUNT_MANDIRI'."
 	}
 	return true, ""

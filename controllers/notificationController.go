@@ -1,0 +1,18 @@
+package controllers
+
+import (
+	paymentNotifModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/notification/payment"
+	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/services"
+)
+
+var NotificationService services.NotificationServices
+
+type NotificationController struct{}
+
+func (nc NotificationController) GenerateNotificationResponse(paymentNotificationRequestBodyDTO paymentNotifModels.PaymentNotificationRequestBodyDTO) paymentNotifModels.PaymentNotificationResponseBodyDTO {
+	return NotificationService.GenerateNotificationResponse(paymentNotificationRequestBodyDTO)
+}
+
+func (nc NotificationController) GenerateInvalidTokenResponse(paymentNotificationRequestBodyDTO paymentNotifModels.PaymentNotificationRequestBodyDTO) paymentNotifModels.PaymentNotificationResponseBodyDTO {
+	return NotificationService.GenerateInvalidTokenNotificationResponse(paymentNotificationRequestBodyDTO)
+}
