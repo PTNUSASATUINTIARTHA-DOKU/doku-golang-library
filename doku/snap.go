@@ -1,6 +1,7 @@
 package doku
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -15,8 +16,9 @@ import (
 	updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
 )
 
-var TokenController controllers.TokenController
-var VaController controllers.VaController
+var TokenController controllers.TokenControllerInterface
+var VaController controllers.VaControllerInterface
+
 var NotificationController controllers.NotificationController
 
 type Snap struct {
@@ -33,19 +35,24 @@ type Snap struct {
 	tokenGeneratedTimestamp string
 }
 
-func (snap *Snap) GetTokenB2B() {
+func (snap *Snap) GetTokenB2B() tokenVaModels.TokenB2BResponseDTO {
 	tokenB2BResponseDTO := TokenController.GetTokenB2B(snap.PrivateKey, snap.ClientId, snap.IsProduction)
-	snap.setTokenB2B(tokenB2BResponseDTO)
+	snap.SetTokenB2B(tokenB2BResponseDTO)
+	return tokenB2BResponseDTO
 }
 
-func (snap *Snap) setTokenB2B(tokenB2BResponseDTO tokenVaModels.TokenB2BResponseDTO) {
+func (snap *Snap) SetTokenB2B(tokenB2BResponseDTO tokenVaModels.TokenB2BResponseDTO) {
 	snap.tokenB2B = tokenB2BResponseDTO.AccessToken
 	snap.tokenExpiresIn = tokenB2BResponseDTO.ExpiresIn - 10
 	snap.tokenGeneratedTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
 }
 
 func (snap *Snap) CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto) createVaModels.CreateVaResponseDto {
-	createVaRequestDto.ValidateVaRequestDto()
+	// createVaRequestDto.ValidateVaRequestDto()
+	if err := createVaRequestDto.ValidateVaRequestDto(); err != nil {
+		log.Println(err)
+	}
+
 	isTokenInvalid := TokenController.IsTokenInvalid(
 		snap.tokenB2B,
 		snap.tokenExpiresIn,
@@ -69,8 +76,10 @@ func (snap *Snap) CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto)
 }
 
 func (snap *Snap) UpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO) updateVaModels.UpdateVaResponseDTO {
-
-	updateVaRequestDTO.ValidateUpdateVaRequestDTO()
+	// updateVaRequestDTO.ValidateUpdateVaRequestDTO()
+	if err := updateVaRequestDTO.ValidateUpdateVaRequestDTO(); err != nil {
+		log.Println(err)
+	}
 	isTokenInvalid := TokenController.IsTokenInvalid(
 		snap.tokenB2B,
 		snap.tokenExpiresIn,

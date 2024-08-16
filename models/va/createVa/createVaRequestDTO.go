@@ -34,7 +34,7 @@ type CreateVaRequestDto struct {
 	Origin                Origin         `json:"origin"`
 }
 
-func (dto *CreateVaRequestDto) ValidateVaRequestDto() {
+func (dto *CreateVaRequestDto) ValidateVaRequestDto() error {
 
 	var validationErrors []string
 
@@ -121,8 +121,9 @@ func (dto *CreateVaRequestDto) ValidateVaRequestDto() {
 	}
 
 	if len(validationErrors) > 0 {
-		panic(errors.New("Validation Failed: \n * " + strings.Join(validationErrors, "\n * ")))
+		return errors.New("Validation Failed: \n * " + strings.Join(validationErrors, "\n * "))
 	}
+	return nil
 }
 
 func (dto *CreateVaRequestDto) validatePartnerServiceId() (bool, string) {

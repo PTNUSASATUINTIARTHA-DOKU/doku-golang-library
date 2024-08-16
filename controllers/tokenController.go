@@ -8,6 +8,15 @@ import (
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/services"
 )
 
+type TokenControllerInterface interface {
+	GetTokenB2B(privateKey string, clientId string, isProduction bool) tokenModels.TokenB2BResponseDTO
+	IsTokenInvalid(tokenB2B string, tokenExpiresIn int, tokenGeneratedTimestamp string) bool
+	ValidateTokenB2B(requestTokenB2B string, publicKey string) bool
+	ValidateSignature(request *http.Request, privateKey string, clientId string) bool
+	GenerateTokenB2B(expiredIn int, issuer string, privateKey string, clientId string) notificationTokenModels.NotificationTokenDTO
+	GenerateInvalidSignatureResponse() notificationTokenModels.NotificationTokenDTO
+}
+
 var TokenServices services.TokenServices
 
 type TokenController struct{}
