@@ -10,12 +10,14 @@ import (
 	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 	deleteVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/deleteVa"
+	notificationPaymentModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/notification/payment"
 	notificationTokenModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/notification/token"
 	updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
 )
 
 var TokenController controllers.TokenController
 var VaController controllers.VaController
+var NotificationController controllers.NotificationController
 
 type Snap struct {
 	// ----------------
@@ -145,4 +147,17 @@ func (snap *Snap) validateSignature(request *http.Request) bool {
 func (snap *Snap) ValidateSignatureAndGenerateToken(request *http.Request) notificationTokenModels.NotificationTokenDTO {
 	var isSignatureValid = snap.validateSignature(request)
 	return snap.generateTokenB2B(isSignatureValid)
+}
+
+func (snap *Snap) GenerateNotificationResponse(isTokenValid bool, paymentNotificationRequestBodyDTO notificationPaymentModels.PaymentNotificationRequestBodyDTO) notificationPaymentModels.PaymentNotificationResponseBodyDTO {
+	if isTokenValid {
+		return NotificationController.GenerateNotificationResponse(paymentNotificationRequestBodyDTO)
+	} else {
+		return NotificationController.GenerateInvalidTokenResponse(paymentNotificationRequestBodyDTO)
+	}
+}
+
+func (snap *Snap) ValidateTokenAndGenerateNotificationResponse(requestTokenB2B string, paymentNotificationRequestBodyDTO notificationPaymentModels.PaymentNotificationRequestBodyDTO) notificationPaymentModels.PaymentNotificationResponseBodyDTO {
+	isTokenValid := snap.ValidateTokenB2B(requestTokenB2B)
+	return snap.GenerateNotificationResponse(isTokenValid, paymentNotificationRequestBodyDTO)
 }
