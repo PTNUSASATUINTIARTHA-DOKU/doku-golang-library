@@ -25,7 +25,7 @@ type UpdateVaDTO struct {
 	ExpiredDate           string                     `json:"expiredDate"`
 }
 
-func (dto *UpdateVaDTO) ValidateUpdateVaRequestDTO() {
+func (dto *UpdateVaDTO) ValidateUpdateVaRequestDTO() error {
 
 	var validationErrors []string
 
@@ -112,8 +112,9 @@ func (dto *UpdateVaDTO) ValidateUpdateVaRequestDTO() {
 	}
 
 	if len(validationErrors) > 0 {
-		panic(errors.New("Validation Failed: \n * " + strings.Join(validationErrors, "\n * ")))
+		return errors.New("Validation Failed: \n * " + strings.Join(validationErrors, "\n * "))
 	}
+	return nil
 }
 
 func (dto *UpdateVaDTO) validatePartnerServiceId() (bool, string) {
