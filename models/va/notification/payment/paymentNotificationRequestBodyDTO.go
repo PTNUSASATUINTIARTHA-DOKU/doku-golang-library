@@ -9,7 +9,7 @@ type PaymentNotificationRequestBodyDTO struct {
 	VirtualAccountName  string                                      `json:"virtualAccountName"`
 	TrxId               string                                      `json:"trxId"`
 	PaymentRequestId    string                                      `json:"paymentRequestId"`
-	TotalAmount         va.TotalAmount                              `json:"totalAmount"`
+	PaidAmount          va.TotalAmount                              `json:"paidAmount"`
 	VirtualAccountEmail string                                      `json:"virtualAccountEmail"`
 	VirtualAccountPhone string                                      `json:"virtualAccountPhone"`
 	AdditionalInfo      PaymentNotificationRequestAdditionalInfoDTO `json:"additionalInfo"`

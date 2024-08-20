@@ -15,6 +15,7 @@ import (
 	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 	deleteVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/deleteVa"
+	inquiryVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/inquiry"
 	updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
 )
 
@@ -236,100 +237,97 @@ func (vs VaServices) DoDeletePaymentCode(requestHeaderDTO createVaModels.Request
 	return deleteVaResponseDto
 }
 
-func (vs VaServices) V1SnapConverter(xmlData []byte) (map[string]interface{}, error) {
+func (vs VaServices) DirectInquiryResponseMapping(xmlData string) (inquiryVaModels.InquiryResponseBodyDTO, error) {
 	var xmlResponse inquiryModels.InquiryResponse
-	var response map[string]interface{}
+	var response inquiryVaModels.InquiryResponseBodyDTO
+	var responseMessage = ""
 
-	err := xml.Unmarshal(xmlData, &xmlResponse)
+	xmlBytes := []byte(xmlData)
+
+	err := xml.Unmarshal(xmlBytes, &xmlResponse)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshaling XML: %v", err)
+		return response, fmt.Errorf("error unmarshaling XML: %v", err)
 	}
 
 	switch xmlResponse.ResponseCode {
 	case "0000":
 		xmlResponse.ResponseCode = "2002400"
-	case "3000", "3001", "3006":
+		responseMessage = "Inquiry Success"
+	case "3000", "3001":
 		xmlResponse.ResponseCode = "4042412"
+		responseMessage = "Invalid Virtual Account Number"
+	case "3006":
+		xmlResponse.ResponseCode = "4042412"
+		responseMessage = "Billing Not Found"
 	case "3002":
 		xmlResponse.ResponseCode = "4042414"
+		responseMessage = "Inquiry Decline by merchant"
 	case "3004":
 		xmlResponse.ResponseCode = "4032400"
+		responseMessage = "Billing Was Expired"
 	case "9999":
 		xmlResponse.ResponseCode = "5002401"
+		responseMessage = "Unexpected Failure"
 	}
 
 	if xmlResponse.Currency >= "360" {
 		xmlResponse.Currency = "IDR"
 	}
 
-	response = map[string]interface{}{
-		"virtualAccountData": map[string]interface{}{
-			"additionalInfo": map[string]interface{}{
-				"trxId": xmlResponse.TransIdMerchant,
-				"virtualAccountConfig": map[string]interface{}{
-					"minAmount": xmlResponse.MinAmount,
-					"maxAmount": xmlResponse.MaxAmount,
+	response = inquiryVaModels.InquiryResponseBodyDTO{
+		ResponseCode:    xmlResponse.ResponseCode,
+		ResponseMessage: responseMessage,
+		VirtualAccountData: inquiryVaModels.InquiryRequestVirtualAccountDataDTO{
+			CustomerNo:          xmlResponse.PaymentCode,
+			VirtualAccountNo:    xmlResponse.PaymentCode,
+			VirtualAccountName:  xmlResponse.Name,
+			VirtualAccountEmail: xmlResponse.Email,
+			TotalAmount: createVaModels.TotalAmount{
+				Value:    xmlResponse.Amount,
+				Currency: xmlResponse.Currency,
+			},
+			AdditionalInfo: inquiryVaModels.InquiryResponseAdditionalInfoDTO{
+				TrxId: xmlResponse.TransIdMerchant,
+				VirtualAccountConfig: createVaModels.VirtualAccountConfig{
+					MinAmount: &xmlResponse.MinAmount,
+					MaxAmount: &xmlResponse.MaxAmount,
 				},
 			},
-			"totalAmount": map[string]interface{}{
-				"value":    xmlResponse.Amount,
-				"currency": xmlResponse.Currency,
-			},
-			"virtualAccountName":  xmlResponse.Name,
-			"virtualAccountEmail": xmlResponse.Email,
-			"virtualAccountNo":    xmlResponse.PaymentCode,
-			"customerNo":          xmlResponse.PaymentCode,
 		},
-		"responseCode": xmlResponse.ResponseCode,
 	}
 
 	return response, nil
 }
 
-func (vs VaServices) SnapV1Converter(jsonData []byte) (string, error) {
-	var data map[string]interface{}
-	err := json.Unmarshal(jsonData, &data)
-	if err != nil {
-		return "", fmt.Errorf("error unmarshaling JSON: %v", err)
-	}
-
-	vaData, ok := data["virtualAccountData"].(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("virtualAccountData not found")
-	}
-
-	additionalInfo, ok := vaData["additionalInfo"].(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("additionalInfo not found")
-	}
-
+func (vs VaServices) DirectInquiryRequestMapping(headerRequest *http.Request, jsonData inquiryVaModels.InquiryRequestBodyDTO) (string, error) {
 	form := url.Values{}
-	if partnerServiceId, ok := vaData["partnerServiceId"].(string); ok {
-		form.Set("MALLID", partnerServiceId)
-	} else {
-		return "", fmt.Errorf("partnerServiceId not found or is not a string")
-	}
 
-	channel, ok := additionalInfo["channel"].(string)
-	if !ok {
-		return "", fmt.Errorf("channel not found or is not a string")
+	partnerServiceId := headerRequest.Header.Get("X-PARTNER-ID")
+	if partnerServiceId == "" {
+		return "", fmt.Errorf("X-PARTNER-ID header not found or is empty")
+	}
+	form.Set("MALLID", partnerServiceId)
+
+	channel := jsonData.AdditionalInfo.Channel
+	if channel == "" {
+		return "", fmt.Errorf("channel not found or is empty")
 	}
 
 	v1ChannelId := commons.GetVAChannelIdV1(channel)
 	form.Set("PAYMENTCHANNEL", v1ChannelId)
 
-	if paymentCode, ok := vaData["virtualAccountNo"].(string); ok {
-		form.Set("PAYMENTCODE", paymentCode)
+	if jsonData.VirtualAccountNo != "" {
+		form.Set("PAYMENTCODE", jsonData.VirtualAccountNo)
 	} else {
-		return "", fmt.Errorf("virtualAccountNo not found or is not a string")
+		return "", fmt.Errorf("virtualAccountNo not found or is empty")
 	}
 
 	form.Set("STATUSTYPE", "/")
 
-	if inquiryRequestId, ok := vaData["inquiryRequestId"].(string); ok {
-		form.Set("OCOID", inquiryRequestId)
+	if jsonData.InquiryRequestId != "" {
+		form.Set("OCOID", jsonData.InquiryRequestId)
 	} else {
-		return "", fmt.Errorf("inquiryRequestId not found or is not a string")
+		return "", fmt.Errorf("inquiryRequestId not found or is empty")
 	}
 
 	return form.Encode(), nil

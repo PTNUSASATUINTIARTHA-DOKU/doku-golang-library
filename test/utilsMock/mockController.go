@@ -1,12 +1,14 @@
 package utilsmock
 
 import (
+	"errors"
 	"net/http"
 
 	models "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/token"
 	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 	deleteVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/deleteVa"
+	inquiryVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/inquiry"
 	notificationTokenModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/notification/token"
 	updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
 	"github.com/stretchr/testify/mock"
@@ -43,6 +45,10 @@ func (m *MockController) GenerateInvalidSignatureResponse() notificationTokenMod
 	return notificationTokenModels.NotificationTokenDTO{}
 }
 
+func (m *MockController) DoGenerateRequestHeader(privateKey string, clientId string, tokenB2B string) createVaModels.RequestHeaderDTO {
+	return createVaModels.RequestHeaderDTO{}
+}
+
 // End TokenController
 
 // VaController
@@ -63,6 +69,14 @@ func (m *MockController) DoCheckStatusVa(checkStatusVARequestDto checkVaModels.C
 
 func (m *MockController) DoDeletePaymentCode(deleteVaRequestDto deleteVaModels.DeleteVaRequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) deleteVaModels.DeleteVaResponseDto {
 	return deleteVaModels.DeleteVaResponseDto{}
+}
+
+func (m *MockController) DirectInquiryRequestMapping(headerRequest *http.Request, inquiryRequestBodyDto inquiryVaModels.InquiryRequestBodyDTO) (string, error) {
+	return "", errors.New("mock function unit testing")
+}
+
+func (m *MockController) DirectInquiryResponseMapping(xmlData string) (inquiryVaModels.InquiryResponseBodyDTO, error) {
+	return inquiryVaModels.InquiryResponseBodyDTO{}, errors.New("mock function unit testing")
 }
 
 // End VaController
