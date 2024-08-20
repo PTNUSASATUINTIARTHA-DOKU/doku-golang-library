@@ -11,6 +11,7 @@ import (
 	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 	deleteVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/deleteVa"
+	inquiryVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/inquiry"
 	notificationPaymentModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/notification/payment"
 	notificationTokenModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/notification/token"
 	updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
@@ -169,4 +170,20 @@ func (snap *Snap) GenerateNotificationResponse(isTokenValid bool, paymentNotific
 func (snap *Snap) ValidateTokenAndGenerateNotificationResponse(requestTokenB2B string, paymentNotificationRequestBodyDTO notificationPaymentModels.PaymentNotificationRequestBodyDTO) notificationPaymentModels.PaymentNotificationResponseBodyDTO {
 	isTokenValid := snap.ValidateTokenB2B(requestTokenB2B)
 	return snap.GenerateNotificationResponse(isTokenValid, paymentNotificationRequestBodyDTO)
+}
+
+func (snap *Snap) GenerateRequestHeader() createVaModels.RequestHeaderDTO {
+	isTokenInvalid := TokenController.IsTokenInvalid(snap.tokenB2B, snap.tokenExpiresIn, snap.tokenGeneratedTimestamp)
+	if isTokenInvalid {
+		snap.GetTokenB2B()
+	}
+	return TokenController.DoGenerateRequestHeader(snap.PrivateKey, snap.ClientId, snap.tokenB2B)
+}
+
+func (snap *Snap) DirectInquiryRequestMapping(headerRequest *http.Request, inquiryRequestBodyDto inquiryVaModels.InquiryRequestBodyDTO) (string, error) {
+	return VaController.DirectInquiryRequestMapping(headerRequest, inquiryRequestBodyDto)
+}
+
+func (snap *Snap) DirectInquiryResponseMapping(xmlData string) (inquiryVaModels.InquiryResponseBodyDTO, error) {
+	return VaController.DirectInquiryResponseMapping(xmlData)
 }

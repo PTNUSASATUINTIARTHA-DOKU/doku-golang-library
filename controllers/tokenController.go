@@ -3,7 +3,9 @@ package controllers
 import (
 	"net/http"
 
+	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons/utils"
 	tokenModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/token"
+	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 	notificationTokenModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/notification/token"
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/services"
 )
@@ -15,9 +17,11 @@ type TokenControllerInterface interface {
 	ValidateSignature(request *http.Request, privateKey string, clientId string) bool
 	GenerateTokenB2B(expiredIn int, issuer string, privateKey string, clientId string) notificationTokenModels.NotificationTokenDTO
 	GenerateInvalidSignatureResponse() notificationTokenModels.NotificationTokenDTO
+	DoGenerateRequestHeader(privateKey string, clientId string, tokenB2B string) createVaModels.RequestHeaderDTO
 }
 
 var TokenServices services.TokenServices
+var SnapUtils utils.SnapUtils
 
 type TokenController struct{}
 
@@ -57,7 +61,14 @@ func (tc TokenController) GenerateTokenB2B(expiredIn int, issuer string, private
 	return TokenServices.GenerateNotificationTokenDTO(token, xTimestamp, clientId, expiredIn)
 }
 
-func (tx TokenController) GenerateInvalidSignatureResponse() notificationTokenModels.NotificationTokenDTO {
+func (tc TokenController) GenerateInvalidSignatureResponse() notificationTokenModels.NotificationTokenDTO {
 	var xTimestamp = TokenServices.GenerateTimestamp()
 	return TokenServices.GenerateInvalidSignature(xTimestamp)
+}
+
+func (tc TokenController) DoGenerateRequestHeader(privateKey string, clientId string, tokenB2B string) createVaModels.RequestHeaderDTO {
+	externalId := SnapUtils.GenerateExternalId()
+	xTimestamp := TokenServices.GenerateTimestamp()
+	signature, _ := TokenServices.CreateSignature(privateKey, clientId, xTimestamp)
+	return snapUtils.GenerateRequestHeaderDto("", signature, xTimestamp, clientId, externalId, tokenB2B)
 }

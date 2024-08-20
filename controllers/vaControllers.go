@@ -3,12 +3,14 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons"
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons/utils"
 	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 	deleteVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/deleteVa"
+	inquiryVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/inquiry"
 	updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/services"
 )
@@ -22,6 +24,8 @@ type VaControllerInterface interface {
 	DoUpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO, clientId string, tokenB2B string, secretKey string, isProduction bool) updateVaModels.UpdateVaResponseDTO
 	DoCheckStatusVa(checkStatusVARequestDto checkVaModels.CheckStatusVARequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) checkVaModels.CheckStatusVaResponseDto
 	DoDeletePaymentCode(deleteVaRequestDto deleteVaModels.DeleteVaRequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) deleteVaModels.DeleteVaResponseDto
+	DirectInquiryRequestMapping(headerRequest *http.Request, inquiryRequestBodyDto inquiryVaModels.InquiryRequestBodyDTO) (string, error)
+	DirectInquiryResponseMapping(xmlData string) (inquiryVaModels.InquiryResponseBodyDTO, error)
 }
 
 type VaController struct{}
@@ -80,4 +84,12 @@ func (vc VaController) DoDeletePaymentCode(deleteVaRequestDto deleteVaModels.Del
 	externalId := snapUtils.GenerateExternalId()
 	header := vaServices.GenerateRequestHeaderDto("SDK", signature, timeStamp, clientId, externalId, tokenB2B)
 	return vaServices.DoDeletePaymentCode(header, deleteVaRequestDto, isProduction)
+}
+
+func (vc VaController) DirectInquiryRequestMapping(headerRequest *http.Request, inquiryRequestBodyDto inquiryVaModels.InquiryRequestBodyDTO) (string, error) {
+	return vaServices.DirectInquiryRequestMapping(headerRequest, inquiryRequestBodyDto)
+}
+
+func (vc VaController) DirectInquiryResponseMapping(xmlData string) (inquiryVaModels.InquiryResponseBodyDTO, error) {
+	return vaServices.DirectInquiryResponseMapping(xmlData)
 }
