@@ -40,6 +40,7 @@ func (ts TokenServices) GenerateTimestamp() string {
 }
 
 func (ts TokenServices) CreateSignature(privateKeyPem string, clientID string, xTimestamp string) (string, error) {
+	fmt.Println("TIMESTAMP KE 2: ", xTimestamp)
 	block, _ := pem.Decode([]byte(privateKeyPem))
 	if block == nil || block.Type != "PRIVATE KEY" {
 		return "", errors.New("failed to decode PEM block containing private key")
@@ -171,17 +172,39 @@ func (ts TokenServices) IsTokenEmpty(tokenB2B string) bool {
 }
 
 func (ts TokenServices) GenerateToken(expiredIn int64, issuer string, privateKey string, clientId string) string {
+	block, _ := pem.Decode([]byte(privateKey))
+	if block == nil {
+		fmt.Println("Failed to parse PEM block containing the private key")
+		return ""
+	}
+
+	parsedKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		fmt.Println("Failed to parse private key:", err)
+		return ""
+	}
+
+	rsaPrivateKey, ok := parsedKey.(*rsa.PrivateKey)
+	if !ok {
+		fmt.Println("Failed to cast parsed key to *rsa.PrivateKey")
+		return ""
+	}
+
 	expiration := time.Now().Unix() + expiredIn
 	payload := jwt.MapClaims{
 		"exp":      expiration,
 		"issuer":   issuer,
 		"clientId": clientId,
 	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, payload)
-	tokenString, err := token.SignedString(privateKey)
+
+	tokenString, err := token.SignedString(rsaPrivateKey)
 	if err != nil {
-		fmt.Println("Error when convert token to string:", err)
+		fmt.Println("Error when converting token to string:", err)
+		return ""
 	}
+
 	return tokenString
 }
 
@@ -201,8 +224,8 @@ func (ts TokenServices) GenerateNotificationTokenDTO(token string, timestamp str
 	}
 
 	var response = notificationTokenModels.NotificationTokenDTO{
-		NotificationTokenHeaderDTO: tokenHeader,
-		NotificationTokenBodyDTO:   tokenBody,
+		Header: tokenHeader,
+		Body:   tokenBody,
 	}
 	return response
 }
@@ -221,8 +244,8 @@ func (ts TokenServices) GenerateInvalidSignature(timestamp string) notificationT
 		AdditionalInfo:  "",
 	}
 	var response = notificationTokenModels.NotificationTokenDTO{
-		NotificationTokenHeaderDTO: tokenHeader,
-		NotificationTokenBodyDTO:   tokenBody,
+		Header: tokenHeader,
+		Body:   tokenBody,
 	}
 	return response
 }

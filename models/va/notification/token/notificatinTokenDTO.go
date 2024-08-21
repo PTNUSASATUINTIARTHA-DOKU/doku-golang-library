@@ -1,6 +1,6 @@
 package models
 
 type NotificationTokenDTO struct {
-	NotificationTokenHeaderDTO NotificationTokenHeaderDTO
-	NotificationTokenBodyDTO   NotificationTokenBodyDTO
+	Header NotificationTokenHeaderDTO
+	Body   NotificationTokenBodyDTO
 }
