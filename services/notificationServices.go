@@ -1,6 +1,7 @@
 package services
 
 import (
+	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 	notification "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/notification"
 	paymentNotifModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/notification/payment"
 )
@@ -17,6 +18,12 @@ func (ns NotificationServices) GenerateNotificationResponse(paymentNotificationR
 			VirtualAccountNo:   paymentNotificationRequestBodyDTO.VirtualAccountNo,
 			VirtualAccountName: paymentNotificationRequestBodyDTO.VirtualAccountName,
 			PaymentRequestId:   paymentNotificationRequestBodyDTO.PaymentRequestId,
+			AdditionalInfo: createVaModels.AdditionalInfo{
+				Channel: paymentNotificationRequestBodyDTO.AdditionalInfo.Channel,
+				VirtualAccountConfig: createVaModels.VirtualAccountConfig{
+					ReusableStatus: paymentNotificationRequestBodyDTO.AdditionalInfo.VirtualAccountConfig.ReusableStatus,
+				},
+			},
 		},
 	}
 }

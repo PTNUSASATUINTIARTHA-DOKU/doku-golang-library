@@ -138,11 +138,30 @@ func (ts TokenServices) CreateTokenB2B(tokenB2BRequestDTO tokenModels.TokenB2BRe
 }
 
 func (ts TokenServices) ValidateTokenB2B(requestTokenB2B string, publicKey string) bool {
-	_, err := jwt.Parse(requestTokenB2B, func(token *jwt.Token) (interface{}, error) {
+
+	block, _ := pem.Decode([]byte(publicKey))
+	if block == nil || block.Type != "PUBLIC KEY" {
+		fmt.Println("Invalid public key format")
+		return false
+	}
+
+	parsedKey, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		fmt.Println("Failed to parse public key:", err)
+		return false
+	}
+
+	rsaPublicKey, ok := parsedKey.(*rsa.PublicKey)
+	if !ok {
+		fmt.Println("Invalid public key type")
+		return false
+	}
+
+	_, err = jwt.Parse(requestTokenB2B, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return publicKey, nil
+		return rsaPublicKey, nil
 	})
 
 	if err != nil {
