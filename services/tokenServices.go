@@ -40,7 +40,6 @@ func (ts TokenServices) GenerateTimestamp() string {
 }
 
 func (ts TokenServices) CreateSignature(privateKeyPem string, clientID string, xTimestamp string) (string, error) {
-	fmt.Println("TIMESTAMP KE 2: ", xTimestamp)
 	block, _ := pem.Decode([]byte(privateKeyPem))
 	if block == nil || block.Type != "PRIVATE KEY" {
 		return "", errors.New("failed to decode PEM block containing private key")
@@ -229,8 +228,8 @@ func (ts TokenServices) GenerateToken(expiredIn int64, issuer string, privateKey
 
 func (ts TokenServices) GenerateNotificationTokenDTO(token string, timestamp string, clientId string, expiresIn int) notificationTokenModels.NotificationTokenDTO {
 	var tokenHeader = notificationTokenModels.NotificationTokenHeaderDTO{
-		XClientKey: clientId,
 		XTimeStamp: timestamp,
+		XClientKey: clientId,
 	}
 
 	var tokenBody = notificationTokenModels.NotificationTokenBodyDTO{
