@@ -16,7 +16,7 @@ type DeleteVaRequestDto struct {
 	AdditionalInfo   DeleteVaRequestAdditionalInfo `json:"additionalInfo"`
 }
 
-func (dto *DeleteVaRequestDto) ValidateDeleteVaRequest() {
+func (dto *DeleteVaRequestDto) ValidateDeleteVaRequest() error {
 
 	var validationErrors []string
 
@@ -41,9 +41,9 @@ func (dto *DeleteVaRequestDto) ValidateDeleteVaRequest() {
 	}
 
 	if len(validationErrors) > 0 {
-		panic(errors.New("Validation Failed: \n * " + strings.Join(validationErrors, "\n * ")))
+		return errors.New("Validation Failed: \n * " + strings.Join(validationErrors, "\n * "))
 	}
-
+	return nil
 }
 
 func (dto *DeleteVaRequestDto) validatePartnerServiceId() (bool, string) {

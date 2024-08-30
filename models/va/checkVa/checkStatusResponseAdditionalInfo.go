@@ -1,5 +1,9 @@
 package models
 
 type CheckStatusResponseAdditionalInfo struct {
-	Acquirer interface{} `json:"acquirer"`
+	Acquirer AcquirerDetails `json:"acquirer"`
+}
+
+type AcquirerDetails struct {
+	Id string `json:"id"`
 }

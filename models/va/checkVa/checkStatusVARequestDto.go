@@ -16,7 +16,7 @@ type CheckStatusVARequestDto struct {
 	AdditionalInfo     *string `json:"additionalInfo,omitempty"`
 }
 
-func (dto *CheckStatusVARequestDto) ValidateCheckStatusVaRequestDto() {
+func (dto *CheckStatusVARequestDto) ValidateCheckStatusVaRequestDto() error {
 
 	var validationErrors []string
 
@@ -45,8 +45,9 @@ func (dto *CheckStatusVARequestDto) ValidateCheckStatusVaRequestDto() {
 	}
 
 	if len(validationErrors) > 0 {
-		panic(errors.New("Validation Failed: \n * " + strings.Join(validationErrors, "\n * ")))
+		return errors.New("Validation Failed: \n * " + strings.Join(validationErrors, "\n * "))
 	}
+	return nil
 }
 
 func (dto *CheckStatusVARequestDto) validatePartnerServiceId() (bool, string) {

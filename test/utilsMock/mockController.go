@@ -64,11 +64,13 @@ func (m *MockController) DoUpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDT
 }
 
 func (m *MockController) DoCheckStatusVa(checkStatusVARequestDto checkVaModels.CheckStatusVARequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) checkVaModels.CheckStatusVaResponseDto {
-	return checkVaModels.CheckStatusVaResponseDto{}
+	args := m.Called(checkStatusVARequestDto, privateKey, clientId, tokenB2B, secretKey, isProduction)
+	return args.Get(0).(checkVaModels.CheckStatusVaResponseDto)
 }
 
 func (m *MockController) DoDeletePaymentCode(deleteVaRequestDto deleteVaModels.DeleteVaRequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) deleteVaModels.DeleteVaResponseDto {
-	return deleteVaModels.DeleteVaResponseDto{}
+	args := m.Called(deleteVaRequestDto, privateKey, clientId, tokenB2B, secretKey, isProduction)
+	return args.Get(0).(deleteVaModels.DeleteVaResponseDto)
 }
 
 func (m *MockController) DirectInquiryRequestMapping(headerRequest *http.Request, inquiryRequestBodyDto inquiryVaModels.InquiryRequestBodyDTO) (string, error) {
