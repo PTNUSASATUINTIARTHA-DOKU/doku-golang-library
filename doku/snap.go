@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/controllers"
+	accountBindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/accountbinding"
 	tokenVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/token"
 	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
@@ -19,8 +20,8 @@ import (
 
 var TokenController controllers.TokenControllerInterface
 var VaController controllers.VaControllerInterface
-
-var NotificationController controllers.NotificationController
+var DirectDebitController controllers.DirectDebitInterface
+var NotificationController controllers.NotificationInterface
 
 type Snap struct {
 	// ----------------
@@ -60,11 +61,7 @@ func (snap *Snap) CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto)
 		snap.tokenGeneratedTimestamp,
 	)
 	if isTokenInvalid {
-		TokenController.GetTokenB2B(
-			snap.PrivateKey,
-			snap.ClientId,
-			snap.IsProduction,
-		)
+		snap.GetTokenB2B()
 	}
 	createVaResponse := VaController.CreateVa(
 		createVaRequestDto,
@@ -87,11 +84,7 @@ func (snap *Snap) UpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO) update
 		snap.tokenGeneratedTimestamp,
 	)
 	if isTokenInvalid {
-		TokenController.GetTokenB2B(
-			snap.PrivateKey,
-			snap.ClientId,
-			snap.IsProduction,
-		)
+		snap.GetTokenB2B()
 	}
 	updateVaResponse := VaController.DoUpdateVa(updateVaRequestDTO, snap.ClientId, snap.tokenB2B, snap.SecretKey, snap.IsProduction)
 
@@ -107,11 +100,7 @@ func (snap *Snap) CheckStatusVa(checkStatusVaRequestDto checkVaModels.CheckStatu
 		snap.tokenGeneratedTimestamp,
 	)
 	if isTokenInvalid {
-		TokenController.GetTokenB2B(
-			snap.PrivateKey,
-			snap.ClientId,
-			snap.IsProduction,
-		)
+		snap.GetTokenB2B()
 	}
 	checkStatusVaResponseDTO := VaController.DoCheckStatusVa(checkStatusVaRequestDto, snap.PrivateKey, snap.ClientId, snap.tokenB2B, snap.SecretKey, snap.IsProduction)
 
@@ -127,11 +116,7 @@ func (snap *Snap) DeletePaymentCode(deleteVaRequestDto deleteVaModels.DeleteVaRe
 		snap.tokenGeneratedTimestamp,
 	)
 	if isTokenInvalid {
-		TokenController.GetTokenB2B(
-			snap.PrivateKey,
-			snap.ClientId,
-			snap.IsProduction,
-		)
+		snap.GetTokenB2B()
 	}
 	deleteVaResponseDto := VaController.DoDeletePaymentCode(deleteVaRequestDto, snap.PrivateKey, snap.ClientId, snap.tokenB2B, snap.SecretKey, snap.IsProduction)
 
@@ -186,4 +171,14 @@ func (snap *Snap) DirectInquiryRequestMapping(headerRequest *http.Request, inqui
 
 func (snap *Snap) DirectInquiryResponseMapping(xmlData string) (inquiryVaModels.InquiryResponseBodyDTO, error) {
 	return VaController.DirectInquiryResponseMapping(xmlData)
+}
+
+func (snap *Snap) DoAccountBinding(accountBindingRequest accountBindingModels.AccountBindingRequestDTO, deviceId string, ipAddress string) accountBindingModels.AccountBindingResponseDto {
+	accountBindingRequest.ValidateAccountBindingRequest()
+	isTokenInvalid := TokenController.IsTokenInvalid(snap.tokenB2B, snap.tokenExpiresIn, snap.tokenGeneratedTimestamp)
+
+	if isTokenInvalid {
+		snap.GetTokenB2B()
+	}
+	return DirectDebitController.DoAccountBinding(accountBindingRequest, snap.SecretKey, snap.ClientId, deviceId, ipAddress, snap.tokenB2B, snap.IsProduction)
 }

@@ -70,5 +70,5 @@ func (tc TokenController) DoGenerateRequestHeader(privateKey string, clientId st
 	externalId := SnapUtils.GenerateExternalId()
 	xTimestamp := TokenServices.GenerateTimestamp()
 	signature, _ := TokenServices.CreateSignature(privateKey, clientId, xTimestamp)
-	return snapUtils.GenerateRequestHeaderDto("", signature, xTimestamp, clientId, externalId, tokenB2B)
+	return snapUtils.GenerateRequestHeaderDto("", signature, xTimestamp, clientId, externalId, "", "", tokenB2B)
 }
