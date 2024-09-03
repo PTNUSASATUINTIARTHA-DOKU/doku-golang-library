@@ -12,6 +12,7 @@ import (
 
 type TokenControllerInterface interface {
 	GetTokenB2B(privateKey string, clientId string, isProduction bool) tokenModels.TokenB2BResponseDTO
+	GetTokenB2B2C(authCode string, privateKey string, clientId string, isProduction bool) tokenModels.TokenB2B2CResponseDTO
 	IsTokenInvalid(tokenB2B string, tokenExpiresIn int, tokenGeneratedTimestamp string) bool
 	ValidateTokenB2B(requestTokenB2B string, publicKey string) bool
 	ValidateSignature(request *http.Request, privateKey string, clientId string) bool
@@ -30,6 +31,13 @@ func (tc TokenController) GetTokenB2B(privateKey string, clientId string, isProd
 	var signature, _ = TokenServices.CreateSignature(privateKey, clientId, xtimestamp)
 	var createTokenB2BRequestDTO tokenModels.TokenB2BRequestDTO = TokenServices.CreateTokenB2BRequestDTO(signature, xtimestamp, clientId)
 	return TokenServices.CreateTokenB2B(createTokenB2BRequestDTO, isProduction)
+}
+
+func (tc TokenController) GetTokenB2B2C(authCode string, privateKey string, clientId string, isProduction bool) tokenModels.TokenB2B2CResponseDTO {
+	timestamp := tokenServices.GenerateTimestamp()
+	signature, _ := tokenServices.CreateSignature(privateKey, clientId, timestamp)
+	tokenB2B2CRequestDTO := tokenServices.CreateTokenB2B2CRequestDTO(authCode)
+	return tokenServices.HitTokenB2B2CApi(tokenB2B2CRequestDTO, timestamp, signature, clientId, isProduction)
 }
 
 func (tc TokenController) IsTokenInvalid(tokenB2B string, tokenExpiresIn int, tokenGeneratedTimestamp string) bool {

@@ -43,6 +43,11 @@ func (snap *Snap) GetTokenB2B() tokenVaModels.TokenB2BResponseDTO {
 	return tokenB2BResponseDTO
 }
 
+func (snap *Snap) GetTokenB2B2C(authCode string) tokenVaModels.TokenB2B2CResponseDTO {
+	tokenB2B2CResponseDTO := TokenController.GetTokenB2B2C(authCode, snap.PrivateKey, snap.ClientId, snap.IsProduction)
+	return tokenB2B2CResponseDTO
+}
+
 func (snap *Snap) SetTokenB2B(tokenB2BResponseDTO tokenVaModels.TokenB2BResponseDTO) {
 	snap.tokenB2B = tokenB2BResponseDTO.AccessToken
 	snap.tokenExpiresIn = tokenB2BResponseDTO.ExpiresIn - 10

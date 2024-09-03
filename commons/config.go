@@ -9,6 +9,7 @@ const (
 	CHECK_VA                     = "/orders/v1.0/transfer-va/status"
 	DELETE_VA                    = "/virtual-accounts/bi-snap-va/v1.1/transfer-va/delete-va"
 	DIRECT_DEBIT_ACCOUNT_BINDING = "/direct-debit/core/v1/registration-account-binding"
+	ACCESS_TOKEN_B2B2C           = "/authorization/v1/access-token/b2b2c"
 )
 
 type Config struct{}
