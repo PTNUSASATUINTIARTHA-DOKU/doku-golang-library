@@ -36,10 +36,6 @@ var VAChannelNames = map[VAChannel]string{
 	VIRTUAL_ACCOUNT_BSS:          "VIRTUAL_ACCOUNT_BSS",
 }
 
-func (v VAChannel) Value() string {
-	return VAChannelNames[v]
-}
-
 func ValidateVAChannel(channel string) bool {
 	for _, validChannel := range VAChannelNames {
 		if channel == validChannel {

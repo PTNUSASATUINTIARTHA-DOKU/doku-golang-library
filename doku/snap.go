@@ -8,6 +8,7 @@ import (
 
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/controllers"
 	accountBindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/accountbinding"
+	balanceInquiryModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/balanceinquiry"
 	tokenVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/token"
 	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
@@ -32,9 +33,12 @@ type Snap struct {
 	ClientId     string
 	IsProduction bool
 	// ----------------
-	tokenB2B                string
-	tokenExpiresIn          int
-	tokenGeneratedTimestamp string
+	tokenB2B                     string
+	tokenExpiresIn               int
+	tokenGeneratedTimestamp      string
+	tokenB2B2C                   string
+	tokenB2B2CExpiresIn          string
+	tokenB2B2CGeneratedTimestamp string
 }
 
 func (snap *Snap) GetTokenB2B() tokenVaModels.TokenB2BResponseDTO {
@@ -45,6 +49,7 @@ func (snap *Snap) GetTokenB2B() tokenVaModels.TokenB2BResponseDTO {
 
 func (snap *Snap) GetTokenB2B2C(authCode string) tokenVaModels.TokenB2B2CResponseDTO {
 	tokenB2B2CResponseDTO := TokenController.GetTokenB2B2C(authCode, snap.PrivateKey, snap.ClientId, snap.IsProduction)
+	snap.SetTokenB2B2C(tokenB2B2CResponseDTO)
 	return tokenB2B2CResponseDTO
 }
 
@@ -52,6 +57,12 @@ func (snap *Snap) SetTokenB2B(tokenB2BResponseDTO tokenVaModels.TokenB2BResponse
 	snap.tokenB2B = tokenB2BResponseDTO.AccessToken
 	snap.tokenExpiresIn = tokenB2BResponseDTO.ExpiresIn - 10
 	snap.tokenGeneratedTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
+}
+
+func (snap *Snap) SetTokenB2B2C(tokenB2B2CResponseDTO tokenVaModels.TokenB2B2CResponseDTO) {
+	snap.tokenB2B2C = tokenB2B2CResponseDTO.AccessToken
+	snap.tokenB2B2CExpiresIn = tokenB2B2CResponseDTO.AccessTokenExpiryTime
+	snap.tokenB2B2CGeneratedTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
 }
 
 func (snap *Snap) CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto) createVaModels.CreateVaResponseDto {
@@ -186,4 +197,14 @@ func (snap *Snap) DoAccountBinding(accountBindingRequest accountBindingModels.Ac
 		snap.GetTokenB2B()
 	}
 	return DirectDebitController.DoAccountBinding(accountBindingRequest, snap.SecretKey, snap.ClientId, deviceId, ipAddress, snap.tokenB2B, snap.IsProduction)
+}
+
+func (snap *Snap) DoBalanceInquiry(balanceInquiryRequestDto balanceInquiryModels.BalanceInquiryRequestDto, deviceId string, ipAddress string) balanceInquiryModels.BalanceInquiryResponseDto {
+	balanceInquiryRequestDto.ValidateBalanceInquiryRequest()
+	isTokenInvalid := TokenController.IsTokenInvalid(snap.tokenB2B, snap.tokenExpiresIn, snap.tokenGeneratedTimestamp)
+
+	if isTokenInvalid {
+		snap.GetTokenB2B()
+	}
+	return DirectDebitController.DoBalanceInquiry(balanceInquiryRequestDto, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B, snap.tokenB2B2C, snap.IsProduction)
 }
