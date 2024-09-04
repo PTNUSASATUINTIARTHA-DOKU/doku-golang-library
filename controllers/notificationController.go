@@ -5,6 +5,11 @@ import (
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/services"
 )
 
+type NotificationInterface interface {
+	GenerateNotificationResponse(paymentNotificationRequestBodyDTO paymentNotifModels.PaymentNotificationRequestBodyDTO) paymentNotifModels.PaymentNotificationResponseBodyDTO
+	GenerateInvalidTokenResponse(paymentNotificationRequestBodyDTO paymentNotifModels.PaymentNotificationRequestBodyDTO) paymentNotifModels.PaymentNotificationResponseBodyDTO
+}
+
 var NotificationService services.NotificationServices
 
 type NotificationController struct{}

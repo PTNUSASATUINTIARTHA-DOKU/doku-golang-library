@@ -41,6 +41,10 @@ func (m *MockController) GenerateTokenB2B(expiredIn int, issuer string, privateK
 	return notificationTokenModels.NotificationTokenDTO{}
 }
 
+func (m *MockController) GetTokenB2B2C(authCode string, privateKey string, clientId string, isProduction bool) models.TokenB2B2CResponseDTO {
+	return models.TokenB2B2CResponseDTO{}
+}
+
 func (m *MockController) GenerateInvalidSignatureResponse() notificationTokenModels.NotificationTokenDTO {
 	return notificationTokenModels.NotificationTokenDTO{}
 }

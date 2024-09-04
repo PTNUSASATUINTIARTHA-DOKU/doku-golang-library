@@ -15,6 +15,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -266,4 +267,54 @@ func (ts TokenServices) GenerateInvalidSignature(timestamp string) notificationT
 		Body:   tokenBody,
 	}
 	return response
+}
+
+func (ts TokenServices) CreateTokenB2B2CRequestDTO(authCode string) tokenModels.TokenB2B2CRequestDTO {
+	return tokenModels.TokenB2B2CRequestDTO{
+		GrantType: "authorization_code",
+		AuthCode:  authCode,
+	}
+}
+
+func (ts TokenServices) HitTokenB2B2CApi(tokenB2B2CRequestDTO tokenModels.TokenB2B2CRequestDTO, timestamp string, signature string, clientId string, isProduction bool) tokenModels.TokenB2B2CResponseDTO {
+	url := config.GetBaseUrl(isProduction) + commons.ACCESS_TOKEN_B2B2C
+	header := map[string]string{
+		"X-TIMESTAMP":  timestamp,
+		"X-SIGNATURE":  signature,
+		"X-CLIENT-KEY": clientId,
+		"Content-Type": "application/json",
+	}
+
+	bodyRequest, err := json.Marshal(tokenB2B2CRequestDTO)
+	if err != nil {
+		fmt.Println("Error body response :", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(bodyRequest))
+	if err != nil {
+		fmt.Println("Error body request :", err)
+	}
+
+	for key, value := range header {
+		req.Header.Set(key, value)
+	}
+
+	client := &http.Client{
+		Timeout: time.Second * 30,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error response :", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+	fmt.Println("RESPONSE: ", string(respBody))
+
+	var tokenB2B2CResponseDTO tokenModels.TokenB2B2CResponseDTO
+	if err := json.Unmarshal(respBody, &tokenB2B2CResponseDTO); err != nil {
+		fmt.Println("error unmarshaling response JSON: ", err)
+	}
+
+	return tokenB2B2CResponseDTO
 }
