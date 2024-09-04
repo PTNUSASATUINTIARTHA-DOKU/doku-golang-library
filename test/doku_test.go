@@ -819,3 +819,298 @@ func TestUpdateVaExpiredIsInvalidFormat(t *testing.T) {
 	}
 
 }
+
+func TestCheckStatusVaSuccess(t *testing.T) {
+	doku.VaController = mockController
+	mockController.On("DoCheckStatusVa", mockGenerated.CheckStatusVaRequest(), "privateKeyPem", "clientId", "", "", false).Return(mockGenerated.CheckStatusVa())
+	snap := doku.Snap{
+		PrivateKey:   "privateKeyPem",
+		ClientId:     "clientId",
+		IsProduction: false,
+	}
+	actualResponse := snap.CheckStatusVa(mockGenerated.CheckStatusVaRequest())
+	assert.Equal(t, "2002600", actualResponse.ResponseCode)
+}
+
+func TestCheckStatusVaPartnerIdNot8Digits(t *testing.T) {
+
+	request := mockGenerated.CheckStatusVaRequest()
+	request.PartnerServiceId = "1234"
+	err := request.ValidateCheckStatusVaRequestDto()
+	if err == nil {
+		t.Fatalf("expected an error, got nil")
+	}
+	expectedError := "PartnerServiceId must be exactly 8 characters long and equiped with left-padded spaces. Example: '  888994"
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+	}
+
+}
+
+func TestCheckStatusVaPartnerIdInvalidFormat(t *testing.T) {
+
+	request := mockGenerated.CheckStatusVaRequest()
+	request.PartnerServiceId = "    890E"
+	err := request.ValidateCheckStatusVaRequestDto()
+	if err == nil {
+		t.Fatalf("expected an error, got nil")
+	}
+	expectedError := "PartnerServiceId must consist of up to 8 digits of character. Remaining space in case of partner serivce id is less than 8 must be filled with spaces. Example: ' 888994' (2 spaces and 6 digits)"
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+	}
+
+}
+
+func TestCheckStatusVaCustomerNoInvalidLength(t *testing.T) {
+
+	request := mockGenerated.CheckStatusVaRequest()
+	request.CustomerNo = "1234567890123456789011"
+	err := request.ValidateCheckStatusVaRequestDto()
+	if err == nil {
+		t.Fatalf("expected an error, got nil")
+	}
+	expectedError := "CustomerNo must be 20 characters or fewer. Ensure that customerNo is no longer than 20 characters. Example: '00000000000000000001'"
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+	}
+
+}
+
+func TestCheckStatusVaCustomerNoInvalidFormat(t *testing.T) {
+
+	request := mockGenerated.CheckStatusVaRequest()
+	request.CustomerNo = "1234567E"
+	err := request.ValidateCheckStatusVaRequestDto()
+	if err == nil {
+		t.Fatalf("expected an error, got nil")
+	}
+	expectedError := "CustomerNo must consist of only digits. Ensure that customerNo contains only numbers. Example: '00000000000000000001'"
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+	}
+
+}
+
+func TestCheckStatusVaInquiryRequestIdInvalidLength(t *testing.T) {
+
+	request := mockGenerated.CheckStatusVaRequest()
+	inquiryRequestId := "CIwxu2v0XgURbX2RYclSfsw4N6fd29YIgvgv1LJpkmSPItG7jrC8ARlKyRhfkgiVnSJvKWRBAu8u0wPyGg0N8mWA8vcSCEvcYsVWut7NNctBkNLT6Le2rBRiEMchWfv4z"
+	request.InquiryRequestId = &inquiryRequestId
+	err := request.ValidateCheckStatusVaRequestDto()
+	if err == nil {
+		t.Fatalf("expected an error, got nil")
+	}
+	expectedError := "InquiryRequestId must be 128 characters or fewer. Ensure that InquiryRequestId is no longer than 128 characters"
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+	}
+
+}
+
+func TestCheckStatusVaPaymentRequestIdInvalidLength(t *testing.T) {
+
+	request := mockGenerated.CheckStatusVaRequest()
+	paymentRequestId := "CIwxu2v0XgURbX2RYclSfsw4N6fd29YIgvgv1LJpkmSPItG7jrC8ARlKyRhfkgiVnSJvKWRBAu8u0wPyGg0N8mWA8vcSCEvcYsVWut7NNctBkNLT6Le2rBRiEMchWfv4z"
+	request.PaymentRequestId = &paymentRequestId
+	err := request.ValidateCheckStatusVaRequestDto()
+	if err == nil {
+		t.Fatalf("expected an error, got nil")
+	}
+	expectedError := "PaymentRequestId must be 128 characters or fewer. Ensure that PaymentRequestId is no longer than 128 characters."
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+	}
+
+}
+
+func TestDeletePaymentCodeSuccess(t *testing.T) {
+	doku.VaController = mockController
+	mockController.On("DoDeletePaymentCode", mockGenerated.DeletePaymentCodeRequest(), "privateKeyPem", "clientId", "", "", false).Return(mockGenerated.DeletePaymentCode())
+	snap := doku.Snap{
+		PrivateKey:   "privateKeyPem",
+		ClientId:     "clientId",
+		IsProduction: false,
+	}
+	actualResponse := snap.DeletePaymentCode(mockGenerated.DeletePaymentCodeRequest())
+	assert.Equal(t, "2003100", actualResponse.ResponseCode)
+}
+
+func TestDeletePaymentCodeNot8Digits(t *testing.T) {
+
+	request := mockGenerated.DeletePaymentCodeRequest()
+	request.PartnerServiceId = "1234"
+	err := request.ValidateDeleteVaRequest()
+	if err == nil {
+		t.Fatalf("expected an error, got nil")
+	}
+	expectedError := "PartnerServiceId must be exactly 8 characters long and equiped with left-padded spaces. Example: '  888994"
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+	}
+}
+
+func TestDeletePaymentCodeInvalidFormat(t *testing.T) {
+
+	request := mockGenerated.DeletePaymentCodeRequest()
+	request.PartnerServiceId = "    890E"
+	err := request.ValidateDeleteVaRequest()
+	if err == nil {
+		t.Fatalf("expected an error, got nil")
+	}
+	expectedError := "PartnerServiceId must consist of up to 8 digits of character. Remaining space in case of partner serivce id is less than 8 must be filled with spaces. Example: ' 888994' (2 spaces and 6 digits)"
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+	}
+
+}
+
+func TestDeletePaymentCodeCustomerNoIsNull(t *testing.T) {
+
+	request := mockGenerated.DeletePaymentCodeRequest()
+	request.CustomerNo = ""
+	err := request.ValidateDeleteVaRequest()
+	if err == nil {
+		t.Fatalf("expected an error, got nil")
+	}
+	expectedError := "CustomerNo cannot be null. Please provide a CustomerNo. "
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+	}
+
+}
+
+func TestDeletePaymentCodeCustomerNoInvalidLength(t *testing.T) {
+
+	request := mockGenerated.DeletePaymentCodeRequest()
+	request.CustomerNo = "1234567890123456789011"
+	err := request.ValidateDeleteVaRequest()
+	if err == nil {
+		t.Fatalf("expected an error, got nil")
+	}
+	expectedError := "CustomerNo must be 20 characters or fewer. Ensure that customerNo is no longer than 20 characters. Example: '00000000000000000001'"
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+	}
+
+}
+
+func TestDeletePaymentCodeCustomerNoInvalidFormat(t *testing.T) {
+
+	request := mockGenerated.DeletePaymentCodeRequest()
+	request.CustomerNo = "1234567E"
+	err := request.ValidateDeleteVaRequest()
+	if err == nil {
+		t.Fatalf("expected an error, got nil")
+	}
+	expectedError := "CustomerNo must consist of only digits. Ensure that customerNo contains only numbers. Example: '00000000000000000001'"
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+	}
+
+}
+
+func TestDeletePaymentCodeVirtualAccountNoIsNull(t *testing.T) {
+
+	request := mockGenerated.DeletePaymentCodeRequest()
+	request.VirtualAccountNo = ""
+	err := request.ValidateDeleteVaRequest()
+	if err == nil {
+		t.Fatalf("expected an error, got nil")
+	}
+	expectedError := "VirtualAccountNo cannot be null. Please provide a virtualAccountNo. "
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+	}
+
+}
+
+func TestDeletePaymentCodeVirtualAccountNoInvalidFormat(t *testing.T) {
+
+	request := mockGenerated.DeletePaymentCodeRequest()
+	request.VirtualAccountNo = "    189920240704000"
+	err := request.ValidateDeleteVaRequest()
+	if err == nil {
+		t.Fatalf("expected an error, got nil")
+	}
+	expectedError := "VirtualAccountNo must be the concatenation of partnerServiceId and customerNo."
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+	}
+
+}
+
+func TestDeletePaymentCodeTrxIdLessThan1(t *testing.T) {
+
+	request := mockGenerated.DeletePaymentCodeRequest()
+	request.TrxId = ""
+	err := request.ValidateDeleteVaRequest()
+	if err == nil {
+		t.Fatalf("expected an error, got nil")
+	}
+	expectedError := "TrxId must be at least 1 character long. Ensure that TrxId is not empty. "
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+	}
+
+}
+
+func TestDeletePaymentCodeTrxIdMoreThan64(t *testing.T) {
+
+	request := mockGenerated.DeletePaymentCodeRequest()
+	request.TrxId = "CIwxu2v0XgURbX2RYclSfsw4N6fd29YIgvgv1LJpkmSPItG7jrC8ARlKyRhfkgiVnSJvKWRBAu"
+	err := request.ValidateDeleteVaRequest()
+	if err == nil {
+		t.Fatalf("expected an error, got nil")
+	}
+	expectedError := "TrxId must be 64 characters or fewer. Ensure that TrxId is no longer than 64 characters."
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+	}
+
+}
+
+func TestDeletePaymentCodeChannelLessThan1(t *testing.T) {
+
+	request := mockGenerated.DeletePaymentCodeRequest()
+	request.AdditionalInfo.Channel = ""
+	err := request.ValidateDeleteVaRequest()
+	if err == nil {
+		t.Fatalf("expected an error, got nil")
+	}
+	expectedError := "AdditionalInfo.Channel must be at least 1 character long. "
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+	}
+
+}
+
+func TestDeletePaymentCodeChannelMoreThan30(t *testing.T) {
+
+	request := mockGenerated.DeletePaymentCodeRequest()
+	request.AdditionalInfo.Channel = "CIwxu2v0XgURbX2RYclSfsw4N6fd29YIgvgv1LJpkmSPItG7jrC8ARlKyRhfkgiVnSJvKWRBAu"
+	err := request.ValidateDeleteVaRequest()
+	if err == nil {
+		t.Fatalf("expected an error, got nil")
+	}
+	expectedError := "AdditionalInfo.Channel must be 30 characters or fewer. Ensure that AdditionalInfo.Channel is no longer than 30 characters."
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+	}
+
+}
+
+func TestDeletePaymentCodeChannelInvalidFormat(t *testing.T) {
+
+	request := mockGenerated.DeletePaymentCodeRequest()
+	request.AdditionalInfo.Channel = "iVnSJvKWRBAu"
+	err := request.ValidateDeleteVaRequest()
+	if err == nil {
+		t.Fatalf("expected an error, got nil")
+	}
+	expectedError := "AdditionalInfo.channel is not valid. Ensure that AdditionalInfo.channel is one of the valid channels"
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+	}
+
+}

@@ -2,7 +2,9 @@ package utilsmock
 
 import (
 	tokenModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/token"
+	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
+	deleteVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/deleteVa"
 	updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
 )
 
@@ -107,6 +109,74 @@ func (mr *MockGenerated) UpdateVaResponseDTO() updateVaModels.UpdateVaResponseDT
 			AdditionalInfo: createVaModels.AdditionalInfoResponse{
 				HowToPayPage: "howToPayPage",
 				HowToPayApi:  "howToPayApi",
+			},
+		},
+	}
+}
+
+func (mr *MockGenerated) CheckStatusVaRequest() checkVaModels.CheckStatusVARequestDto {
+	return checkVaModels.CheckStatusVARequestDto{
+		PartnerServiceId: "    1899",
+		CustomerNo:       "000000000968",
+		VirtualAccountNo: "    1899000000000968",
+	}
+}
+
+func (mr *MockGenerated) CheckStatusVa() checkVaModels.CheckStatusVaResponseDto {
+	return checkVaModels.CheckStatusVaResponseDto{
+		ResponseCode:    "2002600",
+		ResponseMessage: "Successful",
+		VirtualAccountData: checkVaModels.CheckStatusVirtualAccountData{
+			PaymentFlagReason: checkVaModels.CheckStatusResponsePaymentFlagReason{
+				English:   "Pending",
+				Indonesia: "Belum Terbayar",
+			},
+			PartnerServiceId: "    1899",
+			CustomerNo:       "000000000966",
+			VirtualAccountNo: "    1899000000000966",
+			PaidAmount: createVaModels.TotalAmount{
+				Value:    "11000.00",
+				Currency: "IDR",
+			},
+			BillDetails: []checkVaModels.CheckStatusBillDetail{{
+				BillAmount: createVaModels.TotalAmount{
+					Value:    "11000.00",
+					Currency: "IDR",
+				},
+			}},
+			AdditionalInfo: checkVaModels.CheckStatusResponseAdditionalInfo{
+				Acquirer: checkVaModels.AcquirerDetails{
+					Id: "BANK_CIMB",
+				},
+			},
+			TrxId: "7041",
+		},
+	}
+}
+
+func (mr *MockGenerated) DeletePaymentCodeRequest() deleteVaModels.DeleteVaRequestDto {
+	return deleteVaModels.DeleteVaRequestDto{
+		PartnerServiceId: "    1899",
+		CustomerNo:       "000000000971",
+		VirtualAccountNo: "    1899000000000971",
+		TrxId:            "757",
+		AdditionalInfo: deleteVaModels.DeleteVaRequestAdditionalInfo{
+			Channel: "VIRTUAL_ACCOUNT_BANK_CIMB",
+		},
+	}
+}
+
+func (mr *MockGenerated) DeletePaymentCode() deleteVaModels.DeleteVaResponseDto {
+	return deleteVaModels.DeleteVaResponseDto{
+		ResponseCode:    "2003100",
+		ResponseMessage: "Successful",
+		VirtualAccountData: deleteVaModels.DeleteVaResponseVirtualAccountData{
+			PartnerServiceId: "    1899",
+			CustomerNo:       "000000000971",
+			VirtualAccountNo: "    1899000000000971",
+			TrxId:            "757",
+			AdditionalInfo: deleteVaModels.DeleteVaResponseAdditionalInfo{
+				Channel: "VIRTUAL_ACCOUNT_BANK_CIMB",
 			},
 		},
 	}
