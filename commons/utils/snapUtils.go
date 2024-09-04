@@ -33,16 +33,19 @@ func (su SnapUtils) GenerateRequestHeaderDto(
 	externalId string,
 	deviceId string,
 	ipAddress string,
-	tokenB2B string) createVaModels.RequestHeaderDTO {
+	tokenB2B string,
+	tokenB2B2C string,
+) createVaModels.RequestHeaderDTO {
 
 	return createVaModels.RequestHeaderDTO{
-		XTimestamp:    timestamp,
-		XSignature:    signature,
-		XPartnerId:    clientId,
-		XExternalId:   externalId,
-		XDeviceId:     deviceId,
-		XIpAddress:    ipAddress,
-		ChannelId:     channelId,
-		Authorization: tokenB2B,
+		XTimestamp:            timestamp,
+		XSignature:            signature,
+		XPartnerId:            clientId,
+		XExternalId:           externalId,
+		XDeviceId:             deviceId,
+		XIpAddress:            ipAddress,
+		ChannelId:             channelId,
+		Authorization:         tokenB2B,
+		AuthorizationCustomer: tokenB2B2C,
 	}
 }
