@@ -64,7 +64,7 @@ func (dd *DirectDebitController) DoPayment(paymentRequestDTO paymentModels.Payme
 }
 
 func (dd *DirectDebitController) DoAccountUnbinding(accountUnbindingRequestDTO accountUnbindingModels.AccountUnbindingRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, isProduction bool) accountUnbindingModels.AccountUnbindingResponseDTO {
-	url := config.GetBaseUrl(isProduction) + commons.DIRECT_DEBIT_PAYMENT
+	url := config.GetBaseUrl(isProduction) + commons.DIRECT_DEBIT_ACCOUNT_UNBINDING
 	minifiedRequestBody, err := json.Marshal(accountUnbindingRequestDTO)
 	if err != nil {
 		fmt.Println("Error marshalling request body:", err)
