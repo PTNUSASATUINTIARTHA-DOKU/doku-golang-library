@@ -1,5 +1,7 @@
 package utils
 
+import "strings"
+
 type DirectDebitChannel int
 
 const (
@@ -29,4 +31,22 @@ func ValidateDirectDebitChannel(channel string) bool {
 		}
 	}
 	return false
+}
+
+func IsValidFeeType(feeType string) bool {
+	switch strings.ToUpper(feeType) {
+	case "OUR", "BEN", "SHA":
+		return true
+	default:
+		return false
+	}
+}
+
+func IsValidPaymentType(paymentType string) bool {
+	switch strings.ToUpper(paymentType) {
+	case "SALE", "RECURRING":
+		return true
+	default:
+		return false
+	}
 }
