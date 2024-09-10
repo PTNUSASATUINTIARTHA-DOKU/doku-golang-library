@@ -1,6 +1,7 @@
 package doku
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
@@ -66,7 +67,13 @@ func (snap *Snap) SetTokenB2B2C(tokenB2B2CResponseDTO tokenVaModels.TokenB2B2CRe
 }
 
 func (snap *Snap) CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto) createVaModels.CreateVaResponseDto {
-	// createVaRequestDto.ValidateVaRequestDto()
+
+	if isSimulator, errorResponse := createVaRequestDto.ValidateSimulatorASPI(); isSimulator && !snap.IsProduction {
+		resp, _ := json.Marshal(errorResponse)
+		log.Println("RESPONSE: ", string(resp))
+		return errorResponse
+	}
+
 	if err := createVaRequestDto.ValidateVaRequestDto(); err != nil {
 		log.Println(err)
 	}
@@ -90,10 +97,17 @@ func (snap *Snap) CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto)
 }
 
 func (snap *Snap) UpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO) updateVaModels.UpdateVaResponseDTO {
-	// updateVaRequestDTO.ValidateUpdateVaRequestDTO()
+
+	if isSimulator, errorResponse := updateVaRequestDTO.ValidateSimulatorASPI(); isSimulator && !snap.IsProduction {
+		resp, _ := json.Marshal(errorResponse)
+		log.Println("RESPONSE: ", string(resp))
+		return errorResponse
+	}
+
 	if err := updateVaRequestDTO.ValidateUpdateVaRequestDTO(); err != nil {
 		log.Println(err)
 	}
+
 	isTokenInvalid := TokenController.IsTokenInvalid(
 		snap.tokenB2B,
 		snap.tokenExpiresIn,
@@ -125,6 +139,11 @@ func (snap *Snap) CheckStatusVa(checkStatusVaRequestDto checkVaModels.CheckStatu
 
 func (snap *Snap) DeletePaymentCode(deleteVaRequestDto deleteVaModels.DeleteVaRequestDto) deleteVaModels.DeleteVaResponseDto {
 
+	if isSimulator, errorResponse := deleteVaRequestDto.ValidateSimulatorASPI(); isSimulator && !snap.IsProduction {
+		resp, _ := json.Marshal(errorResponse)
+		log.Println("RESPONSE: ", string(resp))
+		return errorResponse
+	}
 	deleteVaRequestDto.ValidateDeleteVaRequest()
 	isTokenInvalid := TokenController.IsTokenInvalid(
 		snap.tokenB2B,

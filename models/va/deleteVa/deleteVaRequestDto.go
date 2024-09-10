@@ -101,3 +101,66 @@ func (dto *DeleteVaRequestDto) validateChannel() (bool, string) {
 	}
 	return true, ""
 }
+
+func (dto *DeleteVaRequestDto) ValidateSimulatorASPI() (bool, DeleteVaResponseDto) {
+	var deleteVaResponseDto DeleteVaResponseDto
+
+	if _, valid := strings.CutPrefix(dto.TrxId, "1114"); valid {
+		var vaData DeleteVaResponseVirtualAccountData
+		vaData.PartnerServiceId = "90341537"
+		vaData.CustomerNo = "00000000000000000000"
+		vaData.VirtualAccountNo = "0000000000000000000000000000"
+		vaData.TrxId = "PGPWF123"
+
+		deleteVaResponseDto.ResponseCode = "2002700"
+		deleteVaResponseDto.ResponseMessage = "Successful"
+		deleteVaResponseDto.VirtualAccountData = &vaData
+		return true, deleteVaResponseDto
+	}
+
+	if _, valid := strings.CutPrefix(dto.TrxId, "111"); valid {
+		deleteVaResponseDto.ResponseCode = "4012701"
+		deleteVaResponseDto.ResponseMessage = "Access Token Invalid (B2B)"
+		return true, deleteVaResponseDto
+	}
+
+	if _, valid := strings.CutPrefix(dto.TrxId, "112"); valid {
+		deleteVaResponseDto.ResponseCode = "4012700"
+		deleteVaResponseDto.ResponseMessage = "Unauthorized . Signature Not Match"
+		return true, deleteVaResponseDto
+	}
+
+	if _, valid := strings.CutPrefix(dto.TrxId, "113"); valid {
+		var vaData DeleteVaResponseVirtualAccountData
+		vaData.PartnerServiceId = "90341537"
+		vaData.CustomerNo = "00000000000000000000"
+		vaData.VirtualAccountNo = "0000000000000000000000000000"
+		vaData.TrxId = "PGPWF123"
+
+		deleteVaResponseDto.ResponseCode = "4002702"
+		deleteVaResponseDto.ResponseMessage = "Invalid Mandatory Field partnerServiceId"
+		deleteVaResponseDto.VirtualAccountData = &vaData
+		return true, deleteVaResponseDto
+	}
+
+	if _, valid := strings.CutPrefix(dto.TrxId, "114"); valid {
+		var vaData DeleteVaResponseVirtualAccountData
+		vaData.PartnerServiceId = "90341537"
+		vaData.CustomerNo = "00000000000000000000"
+		vaData.VirtualAccountNo = "0000000000000000000000000000"
+		vaData.TrxId = "PGPWF123"
+
+		deleteVaResponseDto.ResponseCode = "4002701"
+		deleteVaResponseDto.ResponseMessage = "Invalid Field Format totalAmount.currency"
+		deleteVaResponseDto.VirtualAccountData = &vaData
+		return true, deleteVaResponseDto
+	}
+
+	if _, valid := strings.CutPrefix(dto.TrxId, "115"); valid {
+		deleteVaResponseDto.ResponseCode = "4092700"
+		deleteVaResponseDto.ResponseMessage = "Conflict"
+		return true, deleteVaResponseDto
+	}
+
+	return false, deleteVaResponseDto
+}
