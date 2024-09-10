@@ -314,3 +314,76 @@ func (dto *CreateVaRequestDto) validateExpiredDate() (bool, string) {
 	}
 	return true, ""
 }
+
+func (dto *CreateVaRequestDto) ValidateSimulatorASPI() (bool, CreateVaResponseDto) {
+	var createVaResponseDto CreateVaResponseDto
+
+	if _, valid := strings.CutPrefix(dto.TrxId, "1114"); valid {
+		var vaData VirtualAccountData
+		vaData.PartnerServiceId = "90341537"
+		vaData.CustomerNo = "00000000000000000000"
+		vaData.VirtualAccountNo = "0000000000000000000000000000"
+		vaData.VirtualAccountName = "Jokul Doe 001"
+		vaData.VirtualAccountEmail = "jokul@email.com"
+		vaData.TrxId = "PGPWF123"
+		vaData.TotalAmount.Value = "13000.00"
+		vaData.TotalAmount.Currency = "1"
+
+		createVaResponseDto.ResponseCode = "2002700"
+		createVaResponseDto.ResponseMessage = "Successful"
+		createVaResponseDto.VirtualAccountData = &vaData
+		return true, createVaResponseDto
+	}
+
+	if _, valid := strings.CutPrefix(dto.TrxId, "111"); valid {
+		createVaResponseDto.ResponseCode = "4012701"
+		createVaResponseDto.ResponseMessage = "Access Token Invalid (B2B)"
+		return true, createVaResponseDto
+	}
+
+	if _, valid := strings.CutPrefix(dto.TrxId, "112"); valid {
+		createVaResponseDto.ResponseCode = "4012700"
+		createVaResponseDto.ResponseMessage = "Unauthorized . Signature Not Match"
+		return true, createVaResponseDto
+	}
+
+	if _, valid := strings.CutPrefix(dto.TrxId, "113"); valid {
+		var vaData VirtualAccountData
+		vaData.CustomerNo = "00000000000000000000"
+		vaData.VirtualAccountNo = "0000000000000000000000000000"
+		vaData.VirtualAccountName = "Jokul Doe 001"
+		vaData.VirtualAccountEmail = "jokul@email.com"
+		vaData.TrxId = "PGPWF123"
+		vaData.TotalAmount.Value = "13000.00"
+		vaData.TotalAmount.Currency = "1"
+
+		createVaResponseDto.ResponseCode = "4002702"
+		createVaResponseDto.ResponseMessage = "Invalid Mandatory Field partnerServiceId"
+		createVaResponseDto.VirtualAccountData = &vaData
+		return true, createVaResponseDto
+	}
+
+	if _, valid := strings.CutPrefix(dto.TrxId, "114"); valid {
+		var vaData VirtualAccountData
+		vaData.CustomerNo = "00000000000000000000"
+		vaData.VirtualAccountNo = "0000000000000000000000000000"
+		vaData.VirtualAccountName = "Jokul Doe 001"
+		vaData.VirtualAccountEmail = "jokul@email.com"
+		vaData.TrxId = "PGPWF123"
+		vaData.TotalAmount.Value = "13000.00"
+		vaData.TotalAmount.Currency = "1"
+
+		createVaResponseDto.ResponseCode = "4002701"
+		createVaResponseDto.ResponseMessage = "Invalid Field Format totalAmount.currency"
+		createVaResponseDto.VirtualAccountData = &vaData
+		return true, createVaResponseDto
+	}
+
+	if _, valid := strings.CutPrefix(dto.TrxId, "115"); valid {
+		createVaResponseDto.ResponseCode = "4092700"
+		createVaResponseDto.ResponseMessage = "Conflict"
+		return true, createVaResponseDto
+	}
+
+	return false, createVaResponseDto
+}

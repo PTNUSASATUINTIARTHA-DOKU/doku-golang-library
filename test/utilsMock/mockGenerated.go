@@ -45,25 +45,26 @@ func (mr *MockGenerated) CreateVaRequestDTO() createVaModels.CreateVaRequestDto 
 }
 
 func (mr *MockGenerated) CreateVaResponseDTO() createVaModels.CreateVaResponseDto {
-	return createVaModels.CreateVaResponseDto{
-		ResponseCode:    "2002700",
-		ResponseMessage: "Successful",
-		VirtualAccountData: createVaModels.VirtualAccountData{
-			PartnerServiceId:    "    1899",
-			CustomerNo:          "20240704001",
-			VirtualAccountNo:    "    189920240704001",
-			VirtualAccountName:  "SDKMockTest",
-			VirtualAccountEmail: "mock@testing.com",
-			TrxId:               "INV_20240711001",
-			TotalAmount: createVaModels.TotalAmount{
-				Value:    "11000.00",
-				Currency: "IDR",
-			},
-			AdditionalInfo: createVaModels.AdditionalInfoResponse{
-				HowToPayPage: "howToPayPage",
-				HowToPayApi:  "howToPayApi",
-			},
+	virtualAccountData := createVaModels.VirtualAccountData{
+		PartnerServiceId:    "    1899",
+		CustomerNo:          "20240704001",
+		VirtualAccountNo:    "    189920240704001",
+		VirtualAccountName:  "SDKMockTest",
+		VirtualAccountEmail: "mock@testing.com",
+		TrxId:               "INV_20240711001",
+		TotalAmount: createVaModels.TotalAmount{
+			Value:    "11000.00",
+			Currency: "IDR",
 		},
+		AdditionalInfo: createVaModels.AdditionalInfoResponse{
+			HowToPayPage: "howToPayPage",
+			HowToPayApi:  "howToPayApi",
+		},
+	}
+	return createVaModels.CreateVaResponseDto{
+		ResponseCode:       "2002700",
+		ResponseMessage:    "Successful",
+		VirtualAccountData: &virtualAccountData,
 	}
 }
 
@@ -92,25 +93,26 @@ func (mr *MockGenerated) UpdateVaRequestDTO() updateVaModels.UpdateVaDTO {
 }
 
 func (mr *MockGenerated) UpdateVaResponseDTO() updateVaModels.UpdateVaResponseDTO {
-	return updateVaModels.UpdateVaResponseDTO{
-		ResponseCode:    "2002700",
-		ResponseMessage: "Successful",
-		VirtualAccountData: createVaModels.VirtualAccountData{
-			PartnerServiceId:    "    1899",
-			CustomerNo:          "20240704001",
-			VirtualAccountNo:    "    189920240704001",
-			VirtualAccountName:  "SDKMockTest",
-			VirtualAccountEmail: "mock@testing.com",
-			TrxId:               "INV_20240711001",
-			TotalAmount: createVaModels.TotalAmount{
-				Value:    "11000.00",
-				Currency: "IDR",
-			},
-			AdditionalInfo: createVaModels.AdditionalInfoResponse{
-				HowToPayPage: "howToPayPage",
-				HowToPayApi:  "howToPayApi",
-			},
+	virtualAccountData := createVaModels.VirtualAccountData{
+		PartnerServiceId:    "    1899",
+		CustomerNo:          "20240704001",
+		VirtualAccountNo:    "    189920240704001",
+		VirtualAccountName:  "SDKMockTest",
+		VirtualAccountEmail: "mock@testing.com",
+		TrxId:               "INV_20240711001",
+		TotalAmount: createVaModels.TotalAmount{
+			Value:    "11000.00",
+			Currency: "IDR",
 		},
+		AdditionalInfo: createVaModels.AdditionalInfoResponse{
+			HowToPayPage: "howToPayPage",
+			HowToPayApi:  "howToPayApi",
+		},
+	}
+	return updateVaModels.UpdateVaResponseDTO{
+		ResponseCode:       "2002700",
+		ResponseMessage:    "Successful",
+		VirtualAccountData: &virtualAccountData,
 	}
 }
 
@@ -167,17 +169,18 @@ func (mr *MockGenerated) DeletePaymentCodeRequest() deleteVaModels.DeleteVaReque
 }
 
 func (mr *MockGenerated) DeletePaymentCode() deleteVaModels.DeleteVaResponseDto {
-	return deleteVaModels.DeleteVaResponseDto{
-		ResponseCode:    "2003100",
-		ResponseMessage: "Successful",
-		VirtualAccountData: deleteVaModels.DeleteVaResponseVirtualAccountData{
-			PartnerServiceId: "    1899",
-			CustomerNo:       "000000000971",
-			VirtualAccountNo: "    1899000000000971",
-			TrxId:            "757",
-			AdditionalInfo: deleteVaModels.DeleteVaResponseAdditionalInfo{
-				Channel: "VIRTUAL_ACCOUNT_BANK_CIMB",
-			},
+	virtualAccountData := deleteVaModels.DeleteVaResponseVirtualAccountData{
+		PartnerServiceId: "    1899",
+		CustomerNo:       "000000000971",
+		VirtualAccountNo: "    1899000000000971",
+		TrxId:            "757",
+		AdditionalInfo: deleteVaModels.DeleteVaResponseAdditionalInfo{
+			Channel: "VIRTUAL_ACCOUNT_BANK_CIMB",
 		},
+	}
+	return deleteVaModels.DeleteVaResponseDto{
+		ResponseCode:       "2003100",
+		ResponseMessage:    "Successful",
+		VirtualAccountData: &virtualAccountData,
 	}
 }
