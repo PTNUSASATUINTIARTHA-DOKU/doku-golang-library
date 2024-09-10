@@ -42,22 +42,17 @@ func (ts TokenServices) GenerateTimestamp() string {
 
 func (ts TokenServices) CreateSignature(privateKeyPem string, clientID string, xTimestamp string) (string, error) {
 	block, _ := pem.Decode([]byte(privateKeyPem))
-	if block == nil || block.Type != "PRIVATE KEY" {
-		return "", errors.New("failed to decode PEM block containing private key")
+	if block == nil || block.Type != "RSA PRIVATE KEY" {
+		return "", errors.New("failed to decode PEM block containing RSA private key")
 	}
-	privateKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
 		return "", err
 	}
 
-	rsaPrivateKey, ok := privateKey.(*rsa.PrivateKey)
-	if !ok {
-		return "", errors.New("not an RSA private key")
-	}
-
 	stringToSign := clientID + "|" + xTimestamp
 	hashed := sha256.Sum256([]byte(stringToSign))
-	signature, err := rsa.SignPKCS1v15(rand.Reader, rsaPrivateKey, crypto.SHA256, hashed[:])
+	signature, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA256, hashed[:])
 	if err != nil {
 		return "", err
 	}
@@ -197,15 +192,9 @@ func (ts TokenServices) GenerateToken(expiredIn int64, issuer string, privateKey
 		return ""
 	}
 
-	parsedKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	rsaPrivateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
 		fmt.Println("Failed to parse private key:", err)
-		return ""
-	}
-
-	rsaPrivateKey, ok := parsedKey.(*rsa.PrivateKey)
-	if !ok {
-		fmt.Println("Failed to cast parsed key to *rsa.PrivateKey")
 		return ""
 	}
 

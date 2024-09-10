@@ -8,7 +8,9 @@ import (
 
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/controllers"
 	accountBindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/accountbinding"
+	accountUnbindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/accountunbinding"
 	balanceInquiryModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/balanceinquiry"
+	paymentModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/payment"
 	tokenVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/token"
 	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
@@ -37,7 +39,7 @@ type Snap struct {
 	tokenExpiresIn               int
 	tokenGeneratedTimestamp      string
 	tokenB2B2C                   string
-	tokenB2B2CExpiresIn          string
+	tokenB2B2CExpiresIn          int
 	tokenB2B2CGeneratedTimestamp string
 }
 
@@ -60,8 +62,14 @@ func (snap *Snap) SetTokenB2B(tokenB2BResponseDTO tokenVaModels.TokenB2BResponse
 }
 
 func (snap *Snap) SetTokenB2B2C(tokenB2B2CResponseDTO tokenVaModels.TokenB2B2CResponseDTO) {
+	layout := "2006-01-02T15:04:05-07:00"
+	expiresAtTime, err := time.Parse(layout, tokenB2B2CResponseDTO.AccessTokenExpiryTime)
+	if err != nil {
+		log.Println(err)
+	}
+
 	snap.tokenB2B2C = tokenB2B2CResponseDTO.AccessToken
-	snap.tokenB2B2CExpiresIn = tokenB2B2CResponseDTO.AccessTokenExpiryTime
+	snap.tokenB2B2CExpiresIn = int(expiresAtTime.Unix())
 	snap.tokenB2B2CGeneratedTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
 }
 
@@ -207,4 +215,38 @@ func (snap *Snap) DoBalanceInquiry(balanceInquiryRequestDto balanceInquiryModels
 		snap.GetTokenB2B()
 	}
 	return DirectDebitController.DoBalanceInquiry(balanceInquiryRequestDto, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B, snap.tokenB2B2C, snap.IsProduction)
+}
+
+func (snap *Snap) DoPayment(paymentRequestDTO paymentModels.PaymentRequestDTO, ipAddress string, authCode string) paymentModels.PaymentResponseDTO {
+	if err := paymentRequestDTO.ValidatePaymentRequest(); err != nil {
+		log.Println(err)
+	}
+
+	isTokenB2BInvalid := TokenController.IsTokenInvalid(snap.tokenB2B, snap.tokenExpiresIn, snap.tokenGeneratedTimestamp)
+
+	if isTokenB2BInvalid {
+		snap.GetTokenB2B()
+	}
+
+	isTokenB2B2CInvalid := TokenController.IsTokenInvalid(snap.tokenB2B2C, snap.tokenB2B2CExpiresIn, snap.tokenB2B2CGeneratedTimestamp)
+
+	if isTokenB2B2CInvalid {
+		snap.GetTokenB2B2C(authCode)
+	}
+
+	return DirectDebitController.DoPayment(paymentRequestDTO, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B2C, snap.tokenB2B, snap.IsProduction)
+}
+
+func (snap *Snap) DoAccountUnbinding(accountUnbindingRequestDTO accountUnbindingModels.AccountUnbindingRequestDTO, ipAddress string) accountUnbindingModels.AccountUnbindingResponseDTO {
+	if err := accountUnbindingRequestDTO.ValidateAccountUnbindingRequest(); err != nil {
+		log.Println(err)
+	}
+
+	isTokenInvalid := TokenController.IsTokenInvalid(snap.tokenB2B, snap.tokenExpiresIn, snap.tokenGeneratedTimestamp)
+
+	if isTokenInvalid {
+		snap.GetTokenB2B()
+	}
+
+	return DirectDebitController.DoAccountUnbinding(accountUnbindingRequestDTO, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B, snap.IsProduction)
 }
