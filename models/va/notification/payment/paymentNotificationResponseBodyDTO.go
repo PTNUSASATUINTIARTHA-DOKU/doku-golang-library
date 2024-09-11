@@ -5,5 +5,5 @@ import notification "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/mod
 type PaymentNotificationResponseBodyDTO struct {
 	ResponseCode       string                                      `json:"responseCode"`
 	ResponseMessage    string                                      `json:"responseMessage"`
-	VirtualAccountData notification.NotificationVirtualAccountData `json:"virtualAccountData"`
+	VirtualAccountData notification.NotificationVirtualAccountData `json:"virtualAccountData,omitempty"`
 }
