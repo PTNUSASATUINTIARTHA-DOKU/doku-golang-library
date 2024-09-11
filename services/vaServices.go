@@ -277,7 +277,7 @@ func (vs VaServices) DirectInquiryResponseMapping(xmlData string) (inquiryVaMode
 	response = inquiryVaModels.InquiryResponseBodyDTO{
 		ResponseCode:    xmlResponse.ResponseCode,
 		ResponseMessage: responseMessage,
-		VirtualAccountData: inquiryVaModels.InquiryRequestVirtualAccountDataDTO{
+		VirtualAccountData: &inquiryVaModels.InquiryRequestVirtualAccountDataDTO{
 			CustomerNo:          xmlResponse.PaymentCode,
 			VirtualAccountNo:    xmlResponse.PaymentCode,
 			VirtualAccountName:  xmlResponse.Name,
