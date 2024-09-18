@@ -105,16 +105,9 @@ func (dto *DeleteVaRequestDto) validateChannel() (bool, string) {
 func (dto *DeleteVaRequestDto) ValidateSimulatorASPI() (bool, DeleteVaResponseDto) {
 	var deleteVaResponseDto DeleteVaResponseDto
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "1114"); valid {
-		var vaData DeleteVaResponseVirtualAccountData
-		vaData.PartnerServiceId = "90341537"
-		vaData.CustomerNo = "00000000000000000000"
-		vaData.VirtualAccountNo = "0000000000000000000000000000"
-		vaData.TrxId = "PGPWF123"
-
-		deleteVaResponseDto.ResponseCode = "2002700"
+	if _, valid := strings.CutPrefix(dto.TrxId, "1118"); valid {
+		deleteVaResponseDto.ResponseCode = "2003100"
 		deleteVaResponseDto.ResponseMessage = "Successful"
-		deleteVaResponseDto.VirtualAccountData = &vaData
 		return true, deleteVaResponseDto
 	}
 

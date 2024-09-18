@@ -90,3 +90,59 @@ func (dto *CheckStatusVARequestDto) validatePaymentRequestId() (bool, string) {
 	}
 	return true, ""
 }
+
+func (dto *CheckStatusVARequestDto) ValidateSimulatorASPI() (bool, CheckStatusVaResponseDto) {
+	var checkStatusResponseDto CheckStatusVaResponseDto
+
+	if _, valid := strings.CutPrefix(dto.VirtualAccountNo, "1113"); valid {
+		checkStatusResponseDto.ResponseCode = "2002600"
+		checkStatusResponseDto.ResponseMessage = "Success"
+		return true, checkStatusResponseDto
+	}
+
+	if _, valid := strings.CutPrefix(dto.VirtualAccountNo, "111"); valid {
+		checkStatusResponseDto.ResponseCode = "4012701"
+		checkStatusResponseDto.ResponseMessage = "Access Token Invalid (B2B)"
+		return true, checkStatusResponseDto
+	}
+
+	if _, valid := strings.CutPrefix(dto.VirtualAccountNo, "112"); valid {
+		checkStatusResponseDto.ResponseCode = "4012700"
+		checkStatusResponseDto.ResponseMessage = "Unauthorized . Signature Not Match"
+		return true, checkStatusResponseDto
+	}
+
+	if _, valid := strings.CutPrefix(dto.VirtualAccountNo, "113"); valid {
+		var vaData CheckStatusVirtualAccountData
+		vaData.PartnerServiceId = "90341537"
+		vaData.CustomerNo = "00000000000000000000"
+		vaData.VirtualAccountNo = "0000000000000000000000000000"
+		vaData.TrxId = "PGPWF123"
+
+		checkStatusResponseDto.ResponseCode = "4002702"
+		checkStatusResponseDto.ResponseMessage = "Invalid Mandatory Field partnerServiceId"
+		checkStatusResponseDto.VirtualAccountData = &vaData
+		return true, checkStatusResponseDto
+	}
+
+	if _, valid := strings.CutPrefix(dto.VirtualAccountNo, "114"); valid {
+		var vaData CheckStatusVirtualAccountData
+		vaData.PartnerServiceId = "90341537"
+		vaData.CustomerNo = "00000000000000000000"
+		vaData.VirtualAccountNo = "0000000000000000000000000000"
+		vaData.TrxId = "PGPWF123"
+
+		checkStatusResponseDto.ResponseCode = "4002701"
+		checkStatusResponseDto.ResponseMessage = "Invalid Field Format totalAmount.currency"
+		checkStatusResponseDto.VirtualAccountData = &vaData
+		return true, checkStatusResponseDto
+	}
+
+	if _, valid := strings.CutPrefix(dto.VirtualAccountNo, "115"); valid {
+		checkStatusResponseDto.ResponseCode = "4092700"
+		checkStatusResponseDto.ResponseMessage = "Conflict"
+		return true, checkStatusResponseDto
+	}
+
+	return false, checkStatusResponseDto
+}

@@ -5,5 +5,5 @@ import createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/m
 type UpdateVaResponseDTO struct {
 	ResponseCode       string                             `json:"responseCode"`
 	ResponseMessage    string                             `json:"responseMessage"`
-	VirtualAccountData *createVaModels.VirtualAccountData `json:"virtualAccountData"`
+	VirtualAccountData *createVaModels.VirtualAccountData `json:"virtualAccountData,omitempty"`
 }

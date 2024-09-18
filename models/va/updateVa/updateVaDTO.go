@@ -315,20 +315,15 @@ func (dto *UpdateVaDTO) validateExpiredDate() (bool, string) {
 func (dto *UpdateVaDTO) ValidateSimulatorASPI() (bool, UpdateVaResponseDTO) {
 	var updateVaResponseDto UpdateVaResponseDTO
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "1114"); valid {
-		var vaData createVaModels.VirtualAccountData
-		vaData.PartnerServiceId = "90341537"
-		vaData.CustomerNo = "00000000000000000000"
-		vaData.VirtualAccountNo = "0000000000000000000000000000"
-		vaData.VirtualAccountName = "Jokul Doe 001"
-		vaData.VirtualAccountEmail = "jokul@email.com"
-		vaData.TrxId = "PGPWF123"
-		vaData.TotalAmount.Value = "13000.00"
-		vaData.TotalAmount.Currency = "1"
-
-		updateVaResponseDto.ResponseCode = "2002700"
+	if _, valid := strings.CutPrefix(dto.TrxId, "1115"); valid {
+		updateVaResponseDto.ResponseCode = "2002800"
 		updateVaResponseDto.ResponseMessage = "Successful"
-		updateVaResponseDto.VirtualAccountData = &vaData
+		return true, updateVaResponseDto
+	}
+
+	if _, valid := strings.CutPrefix(dto.TrxId, "1116"); valid {
+		updateVaResponseDto.ResponseCode = "2002900"
+		updateVaResponseDto.ResponseMessage = "Successful"
 		return true, updateVaResponseDto
 	}
 

@@ -125,34 +125,35 @@ func (mr *MockGenerated) CheckStatusVaRequest() checkVaModels.CheckStatusVAReque
 }
 
 func (mr *MockGenerated) CheckStatusVa() checkVaModels.CheckStatusVaResponseDto {
-	return checkVaModels.CheckStatusVaResponseDto{
-		ResponseCode:    "2002600",
-		ResponseMessage: "Successful",
-		VirtualAccountData: checkVaModels.CheckStatusVirtualAccountData{
-			PaymentFlagReason: checkVaModels.CheckStatusResponsePaymentFlagReason{
-				English:   "Pending",
-				Indonesia: "Belum Terbayar",
-			},
-			PartnerServiceId: "    1899",
-			CustomerNo:       "000000000966",
-			VirtualAccountNo: "    1899000000000966",
-			PaidAmount: createVaModels.TotalAmount{
+	virtualAccountData := checkVaModels.CheckStatusVirtualAccountData{
+		PaymentFlagReason: checkVaModels.CheckStatusResponsePaymentFlagReason{
+			English:   "Pending",
+			Indonesia: "Belum Terbayar",
+		},
+		PartnerServiceId: "    1899",
+		CustomerNo:       "000000000966",
+		VirtualAccountNo: "    1899000000000966",
+		PaidAmount: createVaModels.TotalAmount{
+			Value:    "11000.00",
+			Currency: "IDR",
+		},
+		BillDetails: []checkVaModels.CheckStatusBillDetail{{
+			BillAmount: createVaModels.TotalAmount{
 				Value:    "11000.00",
 				Currency: "IDR",
 			},
-			BillDetails: []checkVaModels.CheckStatusBillDetail{{
-				BillAmount: createVaModels.TotalAmount{
-					Value:    "11000.00",
-					Currency: "IDR",
-				},
-			}},
-			AdditionalInfo: checkVaModels.CheckStatusResponseAdditionalInfo{
-				Acquirer: checkVaModels.AcquirerDetails{
-					Id: "BANK_CIMB",
-				},
+		}},
+		AdditionalInfo: checkVaModels.CheckStatusResponseAdditionalInfo{
+			Acquirer: checkVaModels.AcquirerDetails{
+				Id: "BANK_CIMB",
 			},
-			TrxId: "7041",
 		},
+		TrxId: "7041",
+	}
+	return checkVaModels.CheckStatusVaResponseDto{
+		ResponseCode:       "2002600",
+		ResponseMessage:    "Successful",
+		VirtualAccountData: &virtualAccountData,
 	}
 }
 
