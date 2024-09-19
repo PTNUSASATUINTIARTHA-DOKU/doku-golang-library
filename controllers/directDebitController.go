@@ -8,6 +8,7 @@ import (
 	accountBindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/accountbinding"
 	accountUnbindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/accountunbinding"
 	balanceInquiryModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/balanceinquiry"
+	cardRegistrationModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/cardregistration"
 	jumpAppModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/jumpapp"
 	paymentModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/payment"
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/services"
@@ -19,6 +20,7 @@ type DirectDebitInterface interface {
 	DoPayment(paymentRequestDTO paymentModels.PaymentRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B2C string, tokenB2B string, isProduction bool) paymentModels.PaymentResponseDTO
 	DoAccountUnbinding(accountUnbindingRequestDTO accountUnbindingModels.AccountUnbindingRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, isProduction bool) accountUnbindingModels.AccountUnbindingResponseDTO
 	DoPaymentJumpApp(paymentJumpAppRequestDTO jumpAppModels.PaymentJumpAppRequestDTO, secretKey string, clientId string, deviceId string, ipAddress string, tokenB2B string, isProduction bool) jumpAppModels.PaymentJumpAppResponseDTO
+	DoCardRegistration(cardRegistrationRequestDTO cardRegistrationModels.CardRegistrationRequestDTO, secretKey string, clientId string, channelId string, tokenB2B string, isProduction bool) cardRegistrationModels.CardRegistrationResponseDTO
 }
 
 var config commons.Config
@@ -89,4 +91,17 @@ func (dd *DirectDebitController) DoPaymentJumpApp(paymentJumpAppRequestDTO jumpA
 	externalId := snapUtils.GenerateExternalId()
 	requestHeader := snapUtils.GenerateRequestHeaderDto("H2H", signature, timestamp, clientId, externalId, deviceId, ipAddress, tokenB2B, "")
 	return directDebitService.DoPaymentJumpAppProcess(requestHeader, paymentJumpAppRequestDTO, isProduction)
+}
+
+func (dd *DirectDebitController) DoCardRegistration(cardRegistrationRequestDTO cardRegistrationModels.CardRegistrationRequestDTO, secretKey string, clientId string, channelId string, tokenB2B string, isProduction bool) cardRegistrationModels.CardRegistrationResponseDTO {
+	url := config.GetBaseUrl(isProduction) + commons.DIRECT_DEBIT_CARD_REGISTRATION
+	minifiedRequestBody, err := json.Marshal(cardRegistrationRequestDTO)
+	if err != nil {
+		fmt.Println("Error marshalling request body:", err)
+	}
+	timestamp := tokenServices.GenerateTimestamp()
+	externalId := snapUtils.GenerateExternalId()
+	signature := tokenServices.GenerateSymetricSignature("POST", url, tokenB2B, minifiedRequestBody, timestamp, secretKey)
+	requestHeader := snapUtils.GenerateRequestHeaderDto(channelId, signature, timestamp, clientId, externalId, "", "", tokenB2B, "")
+	return directDebitService.DoCardRegistrationProcess(requestHeader, cardRegistrationRequestDTO, isProduction)
 }
