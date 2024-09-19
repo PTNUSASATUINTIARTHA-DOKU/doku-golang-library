@@ -318,6 +318,24 @@ func (dto *CreateVaRequestDto) validateExpiredDate() (bool, string) {
 func (dto *CreateVaRequestDto) ValidateSimulatorASPI() (bool, CreateVaResponseDto) {
 	var createVaResponseDto CreateVaResponseDto
 
+	if _, valid := strings.CutPrefix(dto.TrxId, "1110"); valid {
+		createVaResponseDto.ResponseCode = "2002500"
+		createVaResponseDto.ResponseMessage = "Success"
+		return true, createVaResponseDto
+	}
+
+	if _, valid := strings.CutPrefix(dto.TrxId, "1111"); valid {
+		createVaResponseDto.ResponseCode = "4042512"
+		createVaResponseDto.ResponseMessage = "Bill not found"
+		return true, createVaResponseDto
+	}
+
+	if _, valid := strings.CutPrefix(dto.TrxId, "1112"); valid {
+		createVaResponseDto.ResponseCode = "4042513"
+		createVaResponseDto.ResponseMessage = "Invalid Amount"
+		return true, createVaResponseDto
+	}
+
 	if _, valid := strings.CutPrefix(dto.TrxId, "1114"); valid {
 		var vaData VirtualAccountData
 		vaData.PartnerServiceId = "90341537"

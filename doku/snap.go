@@ -76,10 +76,10 @@ func (snap *Snap) SetTokenB2B2C(tokenB2B2CResponseDTO tokenVaModels.TokenB2B2CRe
 
 func (snap *Snap) CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto) createVaModels.CreateVaResponseDto {
 
-	if isSimulator, errorResponse := createVaRequestDto.ValidateSimulatorASPI(); isSimulator && !snap.IsProduction {
-		resp, _ := json.Marshal(errorResponse)
+	if isSimulator, response := createVaRequestDto.ValidateSimulatorASPI(); isSimulator && !snap.IsProduction {
+		resp, _ := json.Marshal(response)
 		log.Println("RESPONSE: ", string(resp))
-		return errorResponse
+		return response
 	}
 
 	if err := createVaRequestDto.ValidateVaRequestDto(); err != nil {
@@ -106,10 +106,10 @@ func (snap *Snap) CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto)
 
 func (snap *Snap) UpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO) updateVaModels.UpdateVaResponseDTO {
 
-	if isSimulator, errorResponse := updateVaRequestDTO.ValidateSimulatorASPI(); isSimulator && !snap.IsProduction {
-		resp, _ := json.Marshal(errorResponse)
+	if isSimulator, response := updateVaRequestDTO.ValidateSimulatorASPI(); isSimulator && !snap.IsProduction {
+		resp, _ := json.Marshal(response)
 		log.Println("RESPONSE: ", string(resp))
-		return errorResponse
+		return response
 	}
 
 	if err := updateVaRequestDTO.ValidateUpdateVaRequestDTO(); err != nil {
@@ -130,7 +130,11 @@ func (snap *Snap) UpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO) update
 }
 
 func (snap *Snap) CheckStatusVa(checkStatusVaRequestDto checkVaModels.CheckStatusVARequestDto) checkVaModels.CheckStatusVaResponseDto {
-
+	if isSimulator, response := checkStatusVaRequestDto.ValidateSimulatorASPI(); isSimulator && !snap.IsProduction {
+		resp, _ := json.Marshal(response)
+		log.Println("RESPONSE: ", string(resp))
+		return response
+	}
 	checkStatusVaRequestDto.ValidateCheckStatusVaRequestDto()
 	isTokenInvalid := TokenController.IsTokenInvalid(
 		snap.tokenB2B,
@@ -147,10 +151,10 @@ func (snap *Snap) CheckStatusVa(checkStatusVaRequestDto checkVaModels.CheckStatu
 
 func (snap *Snap) DeletePaymentCode(deleteVaRequestDto deleteVaModels.DeleteVaRequestDto) deleteVaModels.DeleteVaResponseDto {
 
-	if isSimulator, errorResponse := deleteVaRequestDto.ValidateSimulatorASPI(); isSimulator && !snap.IsProduction {
-		resp, _ := json.Marshal(errorResponse)
+	if isSimulator, response := deleteVaRequestDto.ValidateSimulatorASPI(); isSimulator && !snap.IsProduction {
+		resp, _ := json.Marshal(response)
 		log.Println("RESPONSE: ", string(resp))
-		return errorResponse
+		return response
 	}
 	deleteVaRequestDto.ValidateDeleteVaRequest()
 	isTokenInvalid := TokenController.IsTokenInvalid(
