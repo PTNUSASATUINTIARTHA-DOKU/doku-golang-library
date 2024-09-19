@@ -94,7 +94,7 @@ createVaResponse := dokuSnap.CreateVa(createVaRequestDTO)
 ```
 
 ##### DIPC
-###### #coming-soon inquiryResponse Function
+###### inquiryResponse Function
 If you use the DIPC feature, you can generate your own paycode and allow your customers to pay without direct communication with DOKU. After customers initiate the payment via the acquirer's channel, DOKU sends an inquiry request to you for validation. This function is applicable for DIPC.
 
 > [!Important!]
@@ -105,112 +105,127 @@ func main() {
      config.InitializeDB()
      defer config.CloseDB()
      config.InitializeSnap()
-     http.HandleFunc("/v1.1/transfer-va/inquiry", ProcessDirectInquiry)
+     http.HandleFunc("/v1.1/transfer-va/inquiry", handlers.DirectInquiryHandler)
      if err := http.ListenAndServe(":8091", nil); err != nil {
 	fmt.Println("Server failed:", err)
      }
 }
 
-func ProcessDirectInquiry(w http.ResponseWriter, r *http.Request) {
-     authHeader := r.Header.Get("Authorization")
-     isTokenValid := config.Snap.ValidateTokenB2B(authHeader)
+func DirectInquiryHandler(w http.ResponseWriter, r *http.Request) {
+	directInquiryResponse, statusCode := services.ProcessDirectInquiry(w, r)
+	responseInquiry, err := json.Marshal(directInquiryResponse)
+	if err != nil {
+		http.Error(w, "Failed to generate JSON response", http.StatusInternalServerError)
+	}
 
-     if isTokenValid {
-	InsertDirectInquiryRequest(w, r)
-	inquiryData := GetDataInquiry(w)
-	inquiryResponse := GenerateResponseDirectInquiry(inquiryData)
-	responseInquiry, err := json.Marshal(inquiryResponse)
-	if err != nil {
-	        http.Error(w, "Failed to generate JSON response", http.StatusInternalServerError)
-	}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(responseInquiry)
-     } else {
-	errorMesaage := map[string]interface{}{
-	    "responseCode":    "4010000",
-	    "responseMessage": "Unauthorized",
-	}
-	errorJson, err := json.Marshal(errorMesaage)
-	if err != nil {
-	   http.Error(w, "Failed to generate JSON response", http.StatusInternalServerError)
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(errorJson)
-     }
+	w.WriteHeader(statusCode)
+	w.Write(responseInquiry) 
 }
 
-func InsertDirectInquiryRequest(w http.ResponseWriter, r *http.Request) {
+func ProcessDirectInquiry(w http.ResponseWriter, r *http.Request) (inquiry.InquiryResponseBodyDTO, int) {
+	authHeader := r.Header.Get("Authorization")
+	isTokenValid := config.Snap.ValidateTokenB2B(authHeader)
 
-     var requestBody inquiry.InquiryRequestBodyDTO
+	var requestBodyInquiry inquiry.InquiryRequestBodyDTO
 
-     err := json.NewDecoder(r.Body).Decode(&requestBody)
-     if err != nil {
-	http.Error(w, err.Error(), http.StatusBadRequest)
-     }
+	err := json.NewDecoder(r.Body).Decode(&requestBodyInquiry)
+	if err != nil {
+		http.Error(w, "Invalid Request Body", http.StatusBadRequest) // error message is optional 
+	}
 
-     bodyRequestJSON, err := json.Marshal(requestBody)
-     if err != nil {
-	http.Error(w, "Failed to parse request body", http.StatusInternalServerError)
-     }
+	defer r.Body.Close()
 
-     bodyRequestString := string(bodyRequestJSON)
-     headerJSON, _ := utils.HeaderReqToJSON(*r)
+	if isTokenValid {
+		inquiryData, err := GetDataInquiry(w, requestBodyInquiry.InquiryRequestId)
 
-     var query = `
-	INSERT INTO incoming_request_direct_inquiry (
-	request_inquiry_request_id, 
-	request_inquiry_body, 
-	request_inquiry_header, 
-	prog_language, 
-	versi_sdk
-	) VALUES ($1, $2, $3, $4, $5)
-     `
-     _, err = config.DB.Exec(query,
-	requestBody.InquiryRequestId,
-	bodyRequestString,
-	headerJSON,
-	"go",
-	"0.0.4",
-     )
+		if err == sql.ErrNoRows {
+			return GenerateResponseDirectInquiryVaNotFound(), http.StatusNotFound
+		}
 
-     if err != nil {
-	http.Error(w, fmt.Sprintf("Error Insert Header Request: %v", err), http.StatusInternalServerError)
-	log.Println("Error inserting data:", err)
-     }
+		UpdateDirectInquiryRequest(w, r, requestBodyInquiry.TrxDateInit, requestBodyInquiry.VirtualAccountNo)
+
+		return GenerateResponseDirectInquiry(inquiryData), http.StatusOK
+
+	} else {
+		return GenerateResponseDirectInquiryUnauthorized(), http.StatusUnauthorized
+	}
 }
 
-func GetDataInquiry(w http.ResponseWriter) inquiry.InquiryRequestVirtualAccountDataDTO {
-     
-     var queryGetInquiryJson = `
-	SELECT inquiry_json_object
-	FROM direct_inquiry
-	WHERE inquiry_request_id = 'INQ_20240709001'; // you can get the inquiry_request_id value from the request body -> inquiryRequestId
-     `
-     var inquiryJsonObject string
+func UpdateDirectInquiryRequest(w http.ResponseWriter, r *http.Request, trxDate string, vaNumber string) {
 
-     err := config.DB.QueryRow(queryGetInquiryJson).Scan(&inquiryJsonObject)
-      if err != nil {
-	http.Error(w, "Error retrieving inquiry data", http.StatusInternalServerError)
-      }
+	query := `
+		UPDATE direct_inquiry_va
+		SET status_va = 'inquiry', settlement_time = $1
+		WHERE va_number = $2;
+	`
 
-     var inquiryData inquiry.InquiryRequestVirtualAccountDataDTO
-     err = json.Unmarshal([]byte(inquiryJsonObject), &inquiryData)
-     if err != nil {
-	http.Error(w, "Failed to parse JSON data", http.StatusInternalServerError)
-     }
+	_, err := config.DB.Exec(query, trxDate, vaNumber)
 
-     return inquiryData
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error Insert Header Request: %v", err), http.StatusInternalServerError)
+		log.Println("Error inserting data:", err)
+		return
+	}
+}
+
+func GetDataInquiry(w http.ResponseWriter, inquiryRequestID string) (inquiry.InquiryRequestVirtualAccountDataDTO, error) {
+	var queryGetInquiryJson = `
+			SELECT inquiry_json_object
+			FROM direct_inquiry
+			WHERE inquiry_request_id = $1;
+		`
+
+	var inquiryJsonObject string
+
+	err := config.DB.QueryRow(queryGetInquiryJson, inquiryRequestID).Scan(&inquiryJsonObject)
+
+	// data not found
+	if err == sql.ErrNoRows {
+		http.Error(w, "Data not found", http.StatusNotFound) // error message is optional
+		return inquiry.InquiryRequestVirtualAccountDataDTO{}, err
+	}
+
+	// others error
+	if err != nil {
+		http.Error(w, "Error retrieving inquiry data", http.StatusInternalServerError) -> // error message is optional
+		return inquiry.InquiryRequestVirtualAccountDataDTO{}, err
+	}
+
+	var inquiryData inquiry.InquiryRequestVirtualAccountDataDTO
+	err = json.Unmarshal([]byte(inquiryJsonObject), &inquiryData)
+	// failed to parse data
+	if err != nil {
+		http.Error(w, "Failed to parse JSON data", http.StatusInternalServerError) // error message is optional
+		return inquiry.InquiryRequestVirtualAccountDataDTO{}, err
+	}
+
+	return inquiryData, nil
 }
 
 func GenerateResponseDirectInquiry(inquiryData inquiry.InquiryRequestVirtualAccountDataDTO) inquiry.InquiryResponseBodyDTO {
-     inquiryResponse := inquiry.InquiryResponseBodyDTO{
-	ResponseCode:       "2002400",
-	ResponseMessage:    "Successful",
-	VirtualAccountData: inquiryData,
-     }
-     return inquiryResponse
+	inquiryResponse := inquiry.InquiryResponseBodyDTO{
+		ResponseCode:       "2002400",
+		ResponseMessage:    "Successful",
+		VirtualAccountData: &inquiryData,
+	}
+	return inquiryResponse
+}
+
+func GenerateResponseDirectInquiryUnauthorized() inquiry.InquiryResponseBodyDTO {
+	inquiryResponse := inquiry.InquiryResponseBodyDTO{
+		ResponseCode:    "4010000",
+		ResponseMessage: "Unauthorized",
+	}
+	return inquiryResponse
+}
+
+func GenerateResponseDirectInquiryVaNotFound() inquiry.InquiryResponseBodyDTO {
+	inquiryResponse := inquiry.InquiryResponseBodyDTO{
+		ResponseCode:    "4012400",
+		ResponseMessage: "Virtual Account Not Found",
+	}
+	return inquiryResponse
 }
 
 ```
@@ -251,6 +266,56 @@ Call the `updateVa` function to update VA. It will return the updated VA.
 
 ```go
 updateVaResponse := dokuSnap.updateVa(updateVaRequestDTO);
+```
+
+##### Delete VA
+###### DeleteVaRequestDto Model
+Create the request object to delete VA. Specify the acquirer in the request object.
+
+```go
+import 	deleteVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/deleteVa"
+
+requestDeleteVa := deleteVaModels.DeleteVaRequestDto{
+   PartnerServiceId: "    1899",
+   CustomerNo:       "000000000971",
+   VirtualAccountNo: "    1899000000000971"
+   TrxId:            "757",
+   AdditionalInfo: deleteVaModels.DeleteVaRequestAdditionalInfo{
+     Channel: "VIRTUAL_ACCOUNT_BANK_CIMB",
+   },
+}
+```
+
+###### deletePaymentCode Function
+Call the `deletePaymentCode` function to delete VA.
+
+```go
+snap.DeletePaymentCode(requestDeleteVa)
+```
+
+##### Check Status VA
+###### CheckStatusVaRequestDto Model
+Create the request object to check status of your VA. Specify the acquirer in the request object.
+
+```go
+import checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
+
+inquiryRequestId := ""
+paymentRequestId := ""
+checkStatusVaRequestDto := checkVaModels.CheckStatusVARequestDto{
+   PartnerServiceId: updateVaResponseDto.VirtualAccountData.PartnerServiceId,
+   CustomerNo:       updateVaResponseDto.VirtualAccountData.CustomerNo,
+   VirtualAccountNo: updateVaResponseDto.VirtualAccountData.VirtualAccountNo,
+   InquiryRequestId: &inquiryRequestId,
+   PaymentRequestId: &paymentRequestId,
+}
+```
+
+###### checkStatusVa Function
+Call the `checkStatusVa` function to check the status of your VA.
+
+```go
+snap.CheckStatusVa(checkStatusVaRequestDto)
 ```
 
 
