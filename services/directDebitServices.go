@@ -12,6 +12,7 @@ import (
 	accountBindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/accountbinding"
 	accountUnbindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/accountunbinding"
 	balanceInquiryModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/balanceinquiry"
+	jumpAppModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/jumpapp"
 	paymentModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/payment"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 )
@@ -169,7 +170,7 @@ func (dd *DirectDebitService) DoAccountUnbindingProcess(requestHeaderDTO createV
 		"Content-Type":  "application/json",
 	}
 
-	bodyRequest, err := json.Marshal(requestHeaderDTO)
+	bodyRequest, err := json.Marshal(accountUnbindingRequestDTO)
 	if err != nil {
 		fmt.Println("Error parse body request :", err)
 	}
@@ -200,4 +201,50 @@ func (dd *DirectDebitService) DoAccountUnbindingProcess(requestHeaderDTO createV
 		fmt.Println("error unmarshaling response JSON: ", err)
 	}
 	return accountUnbindingResponse
+}
+
+func (dd *DirectDebitService) DoPaymentJumpAppProcess(requestHeaderDTO createVaModels.RequestHeaderDTO, paymentJumpAppRequestDTO jumpAppModels.PaymentJumpAppRequestDTO, isProduction bool) jumpAppModels.PaymentJumpAppResponseDTO {
+	url := config.GetBaseUrl(isProduction) + commons.DIRECT_DEBIT_PAYMENT
+	header := map[string]string{
+		"X-TIMESTAMP":   requestHeaderDTO.XTimestamp,
+		"X-SIGNATURE":   requestHeaderDTO.XSignature,
+		"X-PARTNER-ID":  requestHeaderDTO.XPartnerId,
+		"X-EXTERNAL-ID": requestHeaderDTO.XExternalId,
+		"X-IP-ADDRESS":  requestHeaderDTO.XIpAddress,
+		"Authorization": "Bearer " + requestHeaderDTO.Authorization,
+		"CHANNEL-ID":    requestHeaderDTO.ChannelId,
+		"Content-Type":  "application/json",
+	}
+
+	bodyRequest, err := json.Marshal(paymentJumpAppRequestDTO)
+	if err != nil {
+		fmt.Println("Error body response :", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(bodyRequest))
+	if err != nil {
+		fmt.Println("Error body request :", err)
+	}
+
+	for key, value := range header {
+		req.Header.Set(key, value)
+	}
+
+	client := &http.Client{
+		Timeout: time.Second * 30,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error response :", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+	fmt.Println("RESPONSE: ", string(respBody))
+
+	var PaymentJumpAppResponse jumpAppModels.PaymentJumpAppResponseDTO
+	if err := json.Unmarshal(respBody, &PaymentJumpAppResponse); err != nil {
+		fmt.Println("error unmarshaling response JSON: ", err)
+	}
+	return PaymentJumpAppResponse
 }
