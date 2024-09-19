@@ -8,6 +8,7 @@ import (
 	accountBindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/accountbinding"
 	accountUnbindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/accountunbinding"
 	balanceInquiryModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/balanceinquiry"
+	jumpAppModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/jumpapp"
 	paymentModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/payment"
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/services"
 )
@@ -17,6 +18,7 @@ type DirectDebitInterface interface {
 	DoBalanceInquiry(balanceInquiryRequestDto balanceInquiryModels.BalanceInquiryRequestDto, secretKey string, clientId string, ipAddress string, tokenB2B string, tokenB2B2C string, isProduction bool) balanceInquiryModels.BalanceInquiryResponseDto
 	DoPayment(paymentRequestDTO paymentModels.PaymentRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B2C string, tokenB2B string, isProduction bool) paymentModels.PaymentResponseDTO
 	DoAccountUnbinding(accountUnbindingRequestDTO accountUnbindingModels.AccountUnbindingRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, isProduction bool) accountUnbindingModels.AccountUnbindingResponseDTO
+	DoPaymentJumpApp(paymentJumpAppRequestDTO jumpAppModels.PaymentJumpAppRequestDTO, secretKey string, clientId string, deviceId string, ipAddress string, tokenB2B string, isProduction bool) jumpAppModels.PaymentJumpAppResponseDTO
 }
 
 var config commons.Config
@@ -74,4 +76,17 @@ func (dd *DirectDebitController) DoAccountUnbinding(accountUnbindingRequestDTO a
 	externalId := snapUtils.GenerateExternalId()
 	requestHeader := snapUtils.GenerateRequestHeaderDto("SDK", signature, timestamp, clientId, externalId, "", ipAddress, tokenB2B, "")
 	return directDebitService.DoAccountUnbindingProcess(requestHeader, accountUnbindingRequestDTO, isProduction)
+}
+
+func (dd *DirectDebitController) DoPaymentJumpApp(paymentJumpAppRequestDTO jumpAppModels.PaymentJumpAppRequestDTO, secretKey string, clientId string, deviceId string, ipAddress string, tokenB2B string, isProduction bool) jumpAppModels.PaymentJumpAppResponseDTO {
+	url := config.GetBaseUrl(isProduction) + commons.DIRECT_DEBIT_PAYMENT
+	minifiedRequestBody, err := json.Marshal(paymentJumpAppRequestDTO)
+	if err != nil {
+		fmt.Println("Error marshalling request body:", err)
+	}
+	timestamp := tokenServices.GenerateTimestamp()
+	signature := tokenServices.GenerateSymetricSignature("POST", url, tokenB2B, minifiedRequestBody, timestamp, secretKey)
+	externalId := snapUtils.GenerateExternalId()
+	requestHeader := snapUtils.GenerateRequestHeaderDto("H2H", signature, timestamp, clientId, externalId, deviceId, ipAddress, tokenB2B, "")
+	return directDebitService.DoPaymentJumpAppProcess(requestHeader, paymentJumpAppRequestDTO, isProduction)
 }
