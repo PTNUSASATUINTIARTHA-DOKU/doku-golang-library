@@ -11,6 +11,7 @@ import (
 	cardRegistrationModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/cardregistration"
 	jumpAppModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/jumpapp"
 	paymentModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/payment"
+	refundModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/refund"
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/services"
 )
 
@@ -21,6 +22,7 @@ type DirectDebitInterface interface {
 	DoAccountUnbinding(accountUnbindingRequestDTO accountUnbindingModels.AccountUnbindingRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, isProduction bool) accountUnbindingModels.AccountUnbindingResponseDTO
 	DoPaymentJumpApp(paymentJumpAppRequestDTO jumpAppModels.PaymentJumpAppRequestDTO, secretKey string, clientId string, deviceId string, ipAddress string, tokenB2B string, isProduction bool) jumpAppModels.PaymentJumpAppResponseDTO
 	DoCardRegistration(cardRegistrationRequestDTO cardRegistrationModels.CardRegistrationRequestDTO, secretKey string, clientId string, channelId string, tokenB2B string, isProduction bool) cardRegistrationModels.CardRegistrationResponseDTO
+	DoRefund(refundRequestDTO refundModels.RefundRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, tokenB2B2C string, isProduction bool) refundModels.RefundResponseDTO
 }
 
 var config commons.Config
@@ -104,4 +106,18 @@ func (dd *DirectDebitController) DoCardRegistration(cardRegistrationRequestDTO c
 	signature := tokenServices.GenerateSymetricSignature("POST", url, tokenB2B, minifiedRequestBody, timestamp, secretKey)
 	requestHeader := snapUtils.GenerateRequestHeaderDto(channelId, signature, timestamp, clientId, externalId, "", "", tokenB2B, "")
 	return directDebitService.DoCardRegistrationProcess(requestHeader, cardRegistrationRequestDTO, isProduction)
+}
+
+func (dd *DirectDebitController) DoRefund(refundRequestDTO refundModels.RefundRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, tokenB2B2C string, isProduction bool) refundModels.RefundResponseDTO {
+	url := config.GetBaseUrl(isProduction) + commons.DIRECT_DEBIT_REFUND
+	minifiedRequestBody, err := json.Marshal(refundRequestDTO)
+	if err != nil {
+		fmt.Println("Error marshalling request body:", err)
+	}
+	timestamp := tokenServices.GenerateTimestamp()
+	externalId := snapUtils.GenerateExternalId()
+	signature := tokenServices.GenerateSymetricSignature("POST", url, tokenB2B, minifiedRequestBody, timestamp, secretKey)
+	requestHeader := snapUtils.GenerateRequestHeaderDto("SDK", signature, timestamp, clientId, externalId, "", ipAddress, tokenB2B, tokenB2B2C)
+	return directDebitService.DoRefundProcess(requestHeader, refundRequestDTO, isProduction)
+
 }

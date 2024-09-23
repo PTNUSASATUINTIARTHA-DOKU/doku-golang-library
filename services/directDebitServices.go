@@ -15,6 +15,7 @@ import (
 	cardRegistrationModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/cardregistration"
 	jumpAppModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/jumpapp"
 	paymentModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/payment"
+	refundModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/refund"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 )
 
@@ -293,4 +294,50 @@ func (dd *DirectDebitService) DoCardRegistrationProcess(requestHeaderDTO createV
 		fmt.Println("error unmarshaling response JSON: ", err)
 	}
 	return cardRegistrationResponseDTO
+}
+
+func (dd *DirectDebitService) DoRefundProcess(requestHeaderDTO createVaModels.RequestHeaderDTO, refundRequestDTO refundModels.RefundRequestDTO, isProduction bool) refundModels.RefundResponseDTO {
+	url := config.GetBaseUrl(isProduction) + commons.DIRECT_DEBIT_REFUND
+	header := map[string]string{
+		"X-TIMESTAMP":            requestHeaderDTO.XTimestamp,
+		"X-SIGNATURE":            requestHeaderDTO.XSignature,
+		"X-PARTNER-ID":           requestHeaderDTO.XPartnerId,
+		"X-EXTERNAL-ID":          requestHeaderDTO.XExternalId,
+		"X-IP-ADDRESS":           requestHeaderDTO.XIpAddress,
+		"Authorization-Customer": "Bearer " + requestHeaderDTO.AuthorizationCustomer,
+		"Authorization":          "Bearer " + requestHeaderDTO.Authorization,
+		"Content-Type":           "application/json",
+	}
+
+	bodyRequest, err := json.Marshal(refundRequestDTO)
+	if err != nil {
+		fmt.Println("Error body response :", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(bodyRequest))
+	if err != nil {
+		fmt.Println("Error body request :", err)
+	}
+
+	for key, value := range header {
+		req.Header.Set(key, value)
+	}
+
+	client := &http.Client{
+		Timeout: time.Second * 30,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error response :", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+	fmt.Println("RESPONSE: ", string(respBody))
+
+	var refundResponseDTO refundModels.RefundResponseDTO
+	if err := json.Unmarshal(respBody, &refundResponseDTO); err != nil {
+		fmt.Println("error unmarshaling response JSON: ", err)
+	}
+	return refundResponseDTO
 }
