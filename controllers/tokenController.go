@@ -15,7 +15,7 @@ type TokenControllerInterface interface {
 	GetTokenB2B2C(authCode string, privateKey string, clientId string, isProduction bool) tokenModels.TokenB2B2CResponseDTO
 	IsTokenInvalid(tokenB2B string, tokenExpiresIn int, tokenGeneratedTimestamp string) bool
 	ValidateTokenB2B(requestTokenB2B string, publicKey string) bool
-	ValidateSignature(request *http.Request, privateKey string, clientId string, publicKey string) bool
+	ValidateSignature(request *http.Request, privateKey string, clientId string, publicKeyDOKU string) bool
 	GenerateTokenB2B(expiredIn int, issuer string, privateKey string, clientId string) notificationTokenModels.NotificationTokenDTO
 	GenerateInvalidSignatureResponse() notificationTokenModels.NotificationTokenDTO
 	DoGenerateRequestHeader(privateKey string, clientId string, tokenB2B string) createVaModels.RequestHeaderDTO
