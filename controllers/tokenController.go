@@ -15,7 +15,7 @@ type TokenControllerInterface interface {
 	GetTokenB2B2C(authCode string, privateKey string, clientId string, isProduction bool) tokenModels.TokenB2B2CResponseDTO
 	IsTokenInvalid(tokenB2B string, tokenExpiresIn int, tokenGeneratedTimestamp string) bool
 	ValidateTokenB2B(requestTokenB2B string, publicKey string) bool
-	ValidateSignature(request *http.Request, privateKey string, clientId string) bool
+	ValidateSignature(request *http.Request, privateKey string, clientId string, publicKeyDOKU string) bool
 	GenerateTokenB2B(expiredIn int, issuer string, privateKey string, clientId string) notificationTokenModels.NotificationTokenDTO
 	GenerateInvalidSignatureResponse() notificationTokenModels.NotificationTokenDTO
 	DoGenerateRequestHeader(privateKey string, clientId string, tokenB2B string) createVaModels.RequestHeaderDTO
@@ -56,11 +56,11 @@ func (tc TokenController) ValidateTokenB2B(requestTokenB2B string, publicKey str
 	return TokenServices.ValidateTokenB2B(requestTokenB2B, publicKey)
 }
 
-func (tc TokenController) ValidateSignature(request *http.Request, privateKey string, clientId string) bool {
+func (tc TokenController) ValidateSignature(request *http.Request, privateKey string, clientId string, publicKeyDOKU string) bool {
 	timestamp := request.Header.Get("x-timestamp")
 	requestSignature := request.Header.Get("x-signature")
-	var newSignature, _ = TokenServices.CreateSignature(privateKey, clientId, timestamp)
-	return tokenServices.CompareSignature(requestSignature, newSignature)
+	compareSignature, _ := tokenServices.CompareSignatures(clientId, timestamp, requestSignature, publicKeyDOKU)
+	return compareSignature
 }
 
 func (tc TokenController) GenerateTokenB2B(expiredIn int, issuer string, privateKey string, clientId string) notificationTokenModels.NotificationTokenDTO {
