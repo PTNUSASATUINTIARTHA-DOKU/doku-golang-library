@@ -184,12 +184,12 @@ func (snap *Snap) ValidateTokenB2B(requestTokenB2B string) bool {
 	return TokenController.ValidateTokenB2B(requestTokenB2B, snap.PublicKey)
 }
 
-func (snap *Snap) validateSignature(request *http.Request) bool {
-	return TokenController.ValidateSignature(request, snap.PrivateKey, snap.ClientId)
+func (snap *Snap) validateSignature(request *http.Request, publicKeyDOKU string) bool {
+	return TokenController.ValidateSignature(request, snap.PrivateKey, snap.ClientId, publicKeyDOKU)
 }
 
-func (snap *Snap) ValidateSignatureAndGenerateToken(request *http.Request) notificationTokenModels.NotificationTokenDTO {
-	var isSignatureValid = snap.validateSignature(request)
+func (snap *Snap) ValidateSignatureAndGenerateToken(request *http.Request, publicKeyDOKU string) notificationTokenModels.NotificationTokenDTO {
+	var isSignatureValid = snap.validateSignature(request, publicKeyDOKU)
 	return snap.generateTokenB2B(isSignatureValid)
 }
 
