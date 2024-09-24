@@ -257,13 +257,9 @@ func (ts TokenServices) GenerateToken(expiredIn int64, issuer string, privateKey
 	return tokenString
 }
 
-func (ts TokenServices) GenerateNotificationTokenDTO(token string, timestamp string, clientId string, expiresIn int) notificationTokenModels.NotificationTokenDTO {
-	var tokenHeader = notificationTokenModels.NotificationTokenHeaderDTO{
-		XTimeStamp: timestamp,
-		XClientKey: clientId,
-	}
+func (ts TokenServices) GenerateNotificationTokenDTO(token string, timestamp string, clientId string, expiresIn int) notificationTokenModels.NotificationTokenBodyDTO {
 
-	var tokenBody = notificationTokenModels.NotificationTokenBodyDTO{
+	var response = notificationTokenModels.NotificationTokenBodyDTO{
 		ResponseCode:    "2007300",
 		ResponseMessage: "Successful",
 		AccessToken:     token,
@@ -272,19 +268,12 @@ func (ts TokenServices) GenerateNotificationTokenDTO(token string, timestamp str
 		AdditionalInfo:  "",
 	}
 
-	var response = notificationTokenModels.NotificationTokenDTO{
-		Header: tokenHeader,
-		Body:   tokenBody,
-	}
 	return response
 }
 
-func (ts TokenServices) GenerateInvalidSignature(timestamp string) notificationTokenModels.NotificationTokenDTO {
-	var tokenHeader = notificationTokenModels.NotificationTokenHeaderDTO{
-		XClientKey: "",
-		XTimeStamp: timestamp,
-	}
-	var tokenBody = notificationTokenModels.NotificationTokenBodyDTO{
+func (ts TokenServices) GenerateInvalidSignature(timestamp string) notificationTokenModels.NotificationTokenBodyDTO {
+
+	var response = notificationTokenModels.NotificationTokenBodyDTO{
 		ResponseCode:    "4017300",
 		ResponseMessage: "Unauthorized.Invalid Signature",
 		AccessToken:     "",
@@ -292,10 +281,7 @@ func (ts TokenServices) GenerateInvalidSignature(timestamp string) notificationT
 		ExpiresIn:       0,
 		AdditionalInfo:  "",
 	}
-	var response = notificationTokenModels.NotificationTokenDTO{
-		Header: tokenHeader,
-		Body:   tokenBody,
-	}
+
 	return response
 }
 

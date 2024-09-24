@@ -16,8 +16,8 @@ type TokenControllerInterface interface {
 	IsTokenInvalid(tokenB2B string, tokenExpiresIn int, tokenGeneratedTimestamp string) bool
 	ValidateTokenB2B(requestTokenB2B string, publicKey string) bool
 	ValidateSignature(request *http.Request, privateKey string, clientId string, publicKeyDOKU string) bool
-	GenerateTokenB2B(expiredIn int, issuer string, privateKey string, clientId string) notificationTokenModels.NotificationTokenDTO
-	GenerateInvalidSignatureResponse() notificationTokenModels.NotificationTokenDTO
+	GenerateTokenB2B(expiredIn int, issuer string, privateKey string, clientId string) notificationTokenModels.NotificationTokenBodyDTO
+	GenerateInvalidSignatureResponse() notificationTokenModels.NotificationTokenBodyDTO
 	DoGenerateRequestHeader(privateKey string, clientId string, tokenB2B string) createVaModels.RequestHeaderDTO
 }
 
@@ -63,13 +63,13 @@ func (tc TokenController) ValidateSignature(request *http.Request, privateKey st
 	return compareSignature
 }
 
-func (tc TokenController) GenerateTokenB2B(expiredIn int, issuer string, privateKey string, clientId string) notificationTokenModels.NotificationTokenDTO {
+func (tc TokenController) GenerateTokenB2B(expiredIn int, issuer string, privateKey string, clientId string) notificationTokenModels.NotificationTokenBodyDTO {
 	var xTimestamp = TokenServices.GenerateTimestamp()
 	var token = TokenServices.GenerateToken(int64(expiredIn), issuer, privateKey, clientId)
 	return TokenServices.GenerateNotificationTokenDTO(token, xTimestamp, clientId, expiredIn)
 }
 
-func (tc TokenController) GenerateInvalidSignatureResponse() notificationTokenModels.NotificationTokenDTO {
+func (tc TokenController) GenerateInvalidSignatureResponse() notificationTokenModels.NotificationTokenBodyDTO {
 	var xTimestamp = TokenServices.GenerateTimestamp()
 	return TokenServices.GenerateInvalidSignature(xTimestamp)
 }
