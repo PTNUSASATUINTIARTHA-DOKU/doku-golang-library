@@ -2,6 +2,7 @@ package doku
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -180,7 +181,7 @@ func (snap *Snap) generateTokenB2B(isSignatureValid bool) notificationTokenModel
 	}
 }
 
-func (snap *Snap) ValidateTokenB2B(requestTokenB2B string) bool {
+func (snap *Snap) ValidateTokenB2B(requestTokenB2B string) (bool, error) {
 	return TokenController.ValidateTokenB2B(requestTokenB2B, snap.PublicKey)
 }
 
@@ -193,16 +194,20 @@ func (snap *Snap) ValidateSignatureAndGenerateToken(request *http.Request, publi
 	return snap.generateTokenB2B(isSignatureValid)
 }
 
-func (snap *Snap) GenerateNotificationResponse(isTokenValid bool, paymentNotificationRequestBodyDTO notificationPaymentModels.PaymentNotificationRequestBodyDTO) notificationPaymentModels.PaymentNotificationResponseBodyDTO {
+func (snap *Snap) GenerateNotificationResponse(isTokenValid bool, paymentNotificationRequestBodyDTO notificationPaymentModels.PaymentNotificationRequestBodyDTO) (notificationPaymentModels.PaymentNotificationResponseBodyDTO, error) {
 	if isTokenValid {
-		return NotificationController.GenerateNotificationResponse(paymentNotificationRequestBodyDTO)
+		return NotificationController.GenerateNotificationResponse(paymentNotificationRequestBodyDTO), nil
 	} else {
-		return NotificationController.GenerateInvalidTokenResponse(paymentNotificationRequestBodyDTO)
+		return NotificationController.GenerateInvalidTokenResponse(paymentNotificationRequestBodyDTO), fmt.Errorf("invalid token")
 	}
 }
 
-func (snap *Snap) ValidateTokenAndGenerateNotificationResponse(requestTokenB2B string, paymentNotificationRequestBodyDTO notificationPaymentModels.PaymentNotificationRequestBodyDTO) notificationPaymentModels.PaymentNotificationResponseBodyDTO {
-	isTokenValid := snap.ValidateTokenB2B(requestTokenB2B)
+func (snap *Snap) ValidateTokenAndGenerateNotificationResponse(requestTokenB2B string, paymentNotificationRequestBodyDTO notificationPaymentModels.PaymentNotificationRequestBodyDTO) (notificationPaymentModels.PaymentNotificationResponseBodyDTO, error) {
+	isTokenValid, err := snap.ValidateTokenB2B(requestTokenB2B)
+	if err != nil {
+		return notificationPaymentModels.PaymentNotificationResponseBodyDTO{}, fmt.Errorf("token validation failed: %w", err)
+	}
+
 	return snap.GenerateNotificationResponse(isTokenValid, paymentNotificationRequestBodyDTO)
 }
 

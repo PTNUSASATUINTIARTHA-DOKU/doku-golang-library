@@ -14,7 +14,7 @@ type TokenControllerInterface interface {
 	GetTokenB2B(privateKey string, clientId string, isProduction bool) tokenModels.TokenB2BResponseDTO
 	GetTokenB2B2C(authCode string, privateKey string, clientId string, isProduction bool) tokenModels.TokenB2B2CResponseDTO
 	IsTokenInvalid(tokenB2B string, tokenExpiresIn int, tokenGeneratedTimestamp string) bool
-	ValidateTokenB2B(requestTokenB2B string, publicKey string) bool
+	ValidateTokenB2B(requestTokenB2B string, publicKey string) (bool, error)
 	ValidateSignature(request *http.Request, privateKey string, clientId string, publicKeyDOKU string) bool
 	GenerateTokenB2B(expiredIn int, issuer string, privateKey string, clientId string) notificationTokenModels.NotificationTokenBodyDTO
 	GenerateInvalidSignatureResponse() notificationTokenModels.NotificationTokenBodyDTO
@@ -52,7 +52,7 @@ func (tc TokenController) IsTokenInvalid(tokenB2B string, tokenExpiresIn int, to
 	}
 }
 
-func (tc TokenController) ValidateTokenB2B(requestTokenB2B string, publicKey string) bool {
+func (tc TokenController) ValidateTokenB2B(requestTokenB2B string, publicKey string) (bool, error) {
 	return TokenServices.ValidateTokenB2B(requestTokenB2B, publicKey)
 }
 

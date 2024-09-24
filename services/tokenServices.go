@@ -167,24 +167,22 @@ func (ts TokenServices) CreateTokenB2B(tokenB2BRequestDTO tokenModels.TokenB2BRe
 	return tokenB2BResponse
 }
 
-func (ts TokenServices) ValidateTokenB2B(requestTokenB2B string, publicKey string) bool {
+func (ts TokenServices) ValidateTokenB2B(requestTokenB2B string, publicKey string) (bool, error) {
+	requestTokenB2B = strings.TrimPrefix(requestTokenB2B, "Bearer ")
 
 	block, _ := pem.Decode([]byte(publicKey))
 	if block == nil || block.Type != "PUBLIC KEY" {
-		fmt.Println("Invalid public key format")
-		return false
+		return false, fmt.Errorf("invalid public key format")
 	}
 
 	parsedKey, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-		fmt.Println("Failed to parse public key:", err)
-		return false
+		return false, fmt.Errorf("failed to parse public key: %w", err)
 	}
 
 	rsaPublicKey, ok := parsedKey.(*rsa.PublicKey)
 	if !ok {
-		fmt.Println("Invalid public key type")
-		return false
+		return false, fmt.Errorf("invalid public key type")
 	}
 
 	_, err = jwt.Parse(requestTokenB2B, func(token *jwt.Token) (interface{}, error) {
@@ -195,11 +193,10 @@ func (ts TokenServices) ValidateTokenB2B(requestTokenB2B string, publicKey strin
 	})
 
 	if err != nil {
-		fmt.Println("Invalid token:", err)
-		return false
+		return false, fmt.Errorf("invalid token: %w", err)
 	}
 
-	return true
+	return true, nil
 }
 
 func (ts TokenServices) IsTokenExpired(tokenExpiresIn int, tokenGeneratedTimestamp string) bool {
