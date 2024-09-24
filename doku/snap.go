@@ -172,7 +172,7 @@ func (snap *Snap) DeletePaymentCode(deleteVaRequestDto deleteVaModels.DeleteVaRe
 	return deleteVaResponseDto
 }
 
-func (snap *Snap) generateTokenB2B(isSignatureValid bool) notificationTokenModels.NotificationTokenDTO {
+func (snap *Snap) generateTokenB2B(isSignatureValid bool) notificationTokenModels.NotificationTokenBodyDTO {
 	if isSignatureValid {
 		return TokenController.GenerateTokenB2B(snap.tokenExpiresIn, snap.Issuer, snap.PrivateKey, snap.ClientId)
 	} else {
@@ -188,7 +188,7 @@ func (snap *Snap) validateSignature(request *http.Request, publicKeyDOKU string)
 	return TokenController.ValidateSignature(request, snap.PrivateKey, snap.ClientId, publicKeyDOKU)
 }
 
-func (snap *Snap) ValidateSignatureAndGenerateToken(request *http.Request, publicKeyDOKU string) notificationTokenModels.NotificationTokenDTO {
+func (snap *Snap) ValidateSignatureAndGenerateToken(request *http.Request, publicKeyDOKU string) notificationTokenModels.NotificationTokenBodyDTO {
 	var isSignatureValid = snap.validateSignature(request, publicKeyDOKU)
 	return snap.generateTokenB2B(isSignatureValid)
 }
