@@ -13,6 +13,7 @@ import (
 	accountUnbindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/accountunbinding"
 	balanceInquiryModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/balanceinquiry"
 	cardRegistrationModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/cardregistration"
+	checkStatusModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/checkstatus"
 	jumpAppModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/jumpapp"
 	paymentModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/payment"
 	refundModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/refund"
@@ -340,4 +341,67 @@ func (dd *DirectDebitService) DoRefundProcess(requestHeaderDTO createVaModels.Re
 		fmt.Println("error unmarshaling response JSON: ", err)
 	}
 	return refundResponseDTO
+}
+
+func (dd *DirectDebitService) DoCheckStatusProcess(requestHeaderDTO createVaModels.RequestHeaderDTO, checkStatusRequestDTO checkStatusModels.CheckStatusRequestDTO, isProduction bool) (checkStatusModels.CheckStatusResponseDTO, error) {
+
+	var checkStatusResponse checkStatusModels.CheckStatusResponseDTO
+
+	url := config.GetBaseUrl(isProduction) + commons.DIRECT_DEBIT_CHECK_STATUS
+
+	header := map[string]string{
+		"X-TIMESTAMP":   requestHeaderDTO.XTimestamp,
+		"X-SIGNATURE":   requestHeaderDTO.XSignature,
+		"X-PARTNER-ID":  requestHeaderDTO.XPartnerId,
+		"X-EXTERNAL-ID": requestHeaderDTO.XExternalId,
+		"Authorization": "Bearer " + requestHeaderDTO.Authorization,
+		"Content-Type":  "application/json",
+	}
+
+	bodyRequest, err := json.Marshal(checkStatusRequestDTO)
+	if err != nil {
+		return checkStatusModels.CheckStatusResponseDTO{
+			ResponseCode:    "500",
+			ResponseMessage: fmt.Sprintf("error marshalling request body: %v", err),
+		}, err
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(bodyRequest))
+	if err != nil {
+		return checkStatusModels.CheckStatusResponseDTO{
+			ResponseCode:    "500",
+			ResponseMessage: fmt.Sprintf("error creating HTTP request: %v", err),
+		}, err
+	}
+
+	for key, value := range header {
+		req.Header.Set(key, value)
+	}
+
+	client := &http.Client{Timeout: time.Second * 30}
+	resp, err := client.Do(req)
+	if err != nil {
+		return checkStatusModels.CheckStatusResponseDTO{
+			ResponseCode:    "500",
+			ResponseMessage: fmt.Sprintf("error sending HTTP request: %v", err),
+		}, err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return checkStatusModels.CheckStatusResponseDTO{
+			ResponseCode:    "500",
+			ResponseMessage: fmt.Sprintf("error reading response body: %v", err),
+		}, err
+	}
+
+	if err := json.Unmarshal(respBody, &checkStatusResponse); err != nil {
+		return checkStatusModels.CheckStatusResponseDTO{
+			ResponseCode:    "500",
+			ResponseMessage: fmt.Sprintf("error unmarshalling response body: %v", err),
+		}, err
+	}
+
+	return checkStatusResponse, nil
 }
