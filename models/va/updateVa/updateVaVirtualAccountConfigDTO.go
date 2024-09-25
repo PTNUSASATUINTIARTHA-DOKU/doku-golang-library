@@ -1,7 +1,8 @@
 package models
 
 type UpdateVaVirtualAccountConfigDTO struct {
-	Status    string  `json:"status"`
-	MinAmount *string `json:"minAmount"`
-	MaxAmount *string `json:"maxAmount"`
+	ReusableStatus bool    `json:"reusableStatus,omitempty"`
+	Status         string  `json:"status"`
+	MinAmount      *string `json:"minAmount,omitempty"`
+	MaxAmount      *string `json:"maxAmount,omitempty"`
 }
