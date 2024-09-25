@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
 
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
@@ -11,18 +11,18 @@ import (
 type SnapUtils struct{}
 
 func (su SnapUtils) GenerateExternalId() string {
+	numbers := "0123456789"
+	result := make([]byte, 10)
 
-	uuid := fmt.Sprintf("%x-%x-4%x-y%x-%x",
-		rand.Int63n(0x100000000),
-		rand.Int63n(0x10000),
-		rand.Int63n(0x1000),
-		rand.Int63n(0x1000),
-		rand.Int63n(0x1000000000000),
-	)
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
-	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
-	externalId := fmt.Sprintf("%s-%d", uuid, timestamp)
-	return externalId
+	for i := range result {
+		result[i] = numbers[r.Intn(len(numbers))]
+	}
+
+	timestamp := time.Now().Unix()
+
+	return string(result) + strconv.FormatInt(timestamp, 10)
 }
 
 func (su SnapUtils) GenerateRequestHeaderDto(
