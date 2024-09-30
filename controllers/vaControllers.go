@@ -20,7 +20,7 @@ var tokenServices services.TokenServices
 var snapUtils utils.SnapUtils
 
 type VaControllerInterface interface {
-	CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto, privateKey string, clientId string, tokenB2B string, isProduction bool) createVaModels.CreateVaResponseDto
+	CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto, secretKey string, clientId string, tokenB2B string, isProduction bool) createVaModels.CreateVaResponseDto
 	DoUpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO, clientId string, tokenB2B string, secretKey string, isProduction bool) updateVaModels.UpdateVaResponseDTO
 	DoCheckStatusVa(checkStatusVARequestDto checkVaModels.CheckStatusVARequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) checkVaModels.CheckStatusVaResponseDto
 	DoDeletePaymentCode(deleteVaRequestDto deleteVaModels.DeleteVaRequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) deleteVaModels.DeleteVaResponseDto
@@ -30,11 +30,17 @@ type VaControllerInterface interface {
 
 type VaController struct{}
 
-func (vc VaController) CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto, privateKey string, clientId string, tokenB2B string, isProduction bool) createVaModels.CreateVaResponseDto {
-	timeStamp := tokenServices.GenerateTimestamp()
+func (vc VaController) CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto, secretKey string, clientId string, tokenB2B string, isProduction bool) createVaModels.CreateVaResponseDto {
+	timestamp := tokenServices.GenerateTimestamp()
 	externalId := snapUtils.GenerateExternalId()
-	signature, _ := tokenServices.CreateSignature(privateKey, clientId, timeStamp)
-	requestHeader := vaServices.GenerateRequestHeaderDto("SDK", signature, timeStamp, clientId, externalId, tokenB2B)
+	minifiedRequestBody, err := json.Marshal(createVaRequestDto)
+	if err != nil {
+		fmt.Println("Error marshalling request body:", err)
+	}
+	endPointUrl := commons.CREATE_VA
+	httpMethod := "POST"
+	signature := tokenServices.GenerateSymetricSignature(httpMethod, endPointUrl, tokenB2B, minifiedRequestBody, timestamp, secretKey)
+	requestHeader := vaServices.GenerateRequestHeaderDto("H2H", signature, timestamp, clientId, externalId, tokenB2B)
 
 	response := vaServices.CreateVa(
 		requestHeader,

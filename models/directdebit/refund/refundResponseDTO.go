@@ -5,12 +5,12 @@ import (
 )
 
 type RefundResponseDTO struct {
-	ResponseCode               string                     `json:"responseCode"`
-	ResponseMessage            string                     `json:"responseMessage"`
-	RefundAmount               createVaModels.TotalAmount `json:"refundAmount"`
-	OriginalPartnerReferenceNo string                     `json:"originalPartnerReferenceNo,omitempty"`
-	OriginalReferenceNo        string                     `json:"originalReferenceNo,omitempty"`
-	RefundNo                   string                     `json:"refundNo,omitempty"`
-	PartnerRefundNo            string                     `json:"partnerRefundNo,omitempty"`
-	RefundTime                 string                     `json:"refundTime,omitempty"`
+	ResponseCode               string                      `json:"responseCode"`
+	ResponseMessage            string                      `json:"responseMessage"`
+	RefundAmount               *createVaModels.TotalAmount `json:"refundAmount,omitempty"`
+	OriginalPartnerReferenceNo string                      `json:"originalPartnerReferenceNo,omitempty"`
+	OriginalReferenceNo        string                      `json:"originalReferenceNo,omitempty"`
+	RefundNo                   string                      `json:"refundNo,omitempty"`
+	PartnerRefundNo            string                      `json:"partnerRefundNo,omitempty"`
+	RefundTime                 string                      `json:"refundTime,omitempty"`
 }
