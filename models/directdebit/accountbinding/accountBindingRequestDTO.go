@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	directDebitChannel "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons/utils"
+	directDebitChannel "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons/utils/directdebit"
 )
 
 type AccountBindingRequestDTO struct {

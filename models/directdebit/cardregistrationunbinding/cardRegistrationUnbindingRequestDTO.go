@@ -1,4 +1,4 @@
-package accountunbinding
+package cardregistrationunbinding
 
 import (
 	"errors"
@@ -6,16 +6,16 @@ import (
 	directDebitChannel "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons/utils/directdebit"
 )
 
-type AccountUnbindingRequestDTO struct {
-	TokenId        string                                   `json:"tokenId"`
-	AdditionalInfo AccountUnbindingAdditionalInfoRequestDTO `json:"additionalInfo"`
+type CardRegistrationUnbindingRequestDTO struct {
+	TokenId        string                                            `json:"tokenId"`
+	AdditionalInfo CardRegistrationUnbindingAdditionalInfoRequestDTO `json:"additionalInfo"`
 }
 
-type AccountUnbindingAdditionalInfoRequestDTO struct {
+type CardRegistrationUnbindingAdditionalInfoRequestDTO struct {
 	Channel string `json:"channel"`
 }
 
-func (au *AccountUnbindingRequestDTO) ValidateAccountUnbindingRequest() error {
+func (au *CardRegistrationUnbindingRequestDTO) ValidateCardRegistrationUnbindingRequest() error {
 	if !directDebitChannel.ValidateDirectDebitChannel(au.AdditionalInfo.Channel) {
 		return errors.New("additionalInfo.channel is not valid. Ensure that additionalInfo.channel is one of the valid channels. Example: 'DIRECT_DEBIT_ALLO_SNAP'")
 	}

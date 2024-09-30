@@ -158,10 +158,12 @@ func (ts TokenServices) CreateTokenB2B(tokenB2BRequestDTO tokenModels.TokenB2BRe
 	}
 	defer res.Body.Close()
 
+	respBody, _ := io.ReadAll(res.Body)
+	fmt.Println("RESPONSE: ", string(respBody))
+
 	var tokenB2BResponse tokenModels.TokenB2BResponseDTO
-	err = json.NewDecoder(res.Body).Decode(&tokenB2BResponse)
-	if err != nil {
-		fmt.Println("Error reading response body:", err)
+	if err := json.Unmarshal(respBody, &tokenB2BResponse); err != nil {
+		fmt.Println("error unmarshaling response JSON: ", err)
 	}
 
 	return tokenB2BResponse
