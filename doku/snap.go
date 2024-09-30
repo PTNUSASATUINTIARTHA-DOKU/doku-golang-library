@@ -13,6 +13,7 @@ import (
 	accountUnbindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/accountunbinding"
 	balanceInquiryModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/balanceinquiry"
 	cardRegistrationModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/cardregistration"
+	checkStatusModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/checkstatus"
 	registrationCardUnbindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/cardregistrationunbinding"
 	jumpAppModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/jumpapp"
 	paymentModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/payment"
@@ -318,6 +319,25 @@ func (snap *Snap) DoRefund(refundRequestDTO refundModels.RefundRequestDTO, ipAdd
 	}
 
 	return DirectDebitController.DoRefund(refundRequestDTO, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B, snap.tokenB2B2C, snap.IsProduction)
+}
+
+
+func (snap *Snap) DoCheckStatus(checkStatusRequestDTO checkStatusModels.CheckStatusRequestDTO) (checkStatusModels.CheckStatusResponseDTO, error) {
+	err := checkStatusRequestDTO.ValidateCheckStatusRequest()
+	if err != nil {
+		return checkStatusModels.CheckStatusResponseDTO{
+			ResponseCode:    "400",
+			ResponseMessage: err.Error(),
+		}, err
+	}
+
+	isTokenB2BInvalid := TokenController.IsTokenInvalid(snap.tokenB2B, snap.tokenExpiresIn, snap.tokenGeneratedTimestamp)
+
+	if isTokenB2BInvalid {
+		snap.GetTokenB2B()
+	}
+
+	return DirectDebitController.DoCheckStatus(checkStatusRequestDTO, snap.SecretKey, snap.ClientId, snap.tokenB2B, snap.IsProduction)
 }
 
 func (snap *Snap) DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO registrationCardUnbindingModels.CardRegistrationUnbindingRequestDTO, ipAddress string) registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO {

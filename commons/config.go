@@ -15,7 +15,9 @@ const (
 	DIRECT_DEBIT_ACCOUNT_UNBINDING   = "/direct-debit/core/v1/registration-account-unbinding"
 	DIRECT_DEBIT_CARD_REGISTRATION   = "/direct-debit/core/v1/registration-card-bind"
 	DIRECT_DEBIT_REFUND              = "/direct-debit/core/v1/debit/refund"
+	DIRECT_DEBIT_CHECK_STATUS        = "/orders/v1.0/debit/status"
 	DIRECT_DEBIT_CARD_UNBINDING      = "/direct-debit/core/v1/registration-card-unbind"
+
 )
 
 type Config struct{}

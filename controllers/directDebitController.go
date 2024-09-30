@@ -9,6 +9,7 @@ import (
 	accountUnbindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/accountunbinding"
 	balanceInquiryModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/balanceinquiry"
 	cardRegistrationModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/cardregistration"
+	checkStatusModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/checkstatus"
 	registrationCardUnbindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/cardregistrationunbinding"
 	jumpAppModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/jumpapp"
 	paymentModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/payment"
@@ -24,6 +25,7 @@ type DirectDebitInterface interface {
 	DoPaymentJumpApp(paymentJumpAppRequestDTO jumpAppModels.PaymentJumpAppRequestDTO, secretKey string, clientId string, deviceId string, ipAddress string, tokenB2B string, isProduction bool) jumpAppModels.PaymentJumpAppResponseDTO
 	DoCardRegistration(cardRegistrationRequestDTO cardRegistrationModels.CardRegistrationRequestDTO, secretKey string, clientId string, channelId string, tokenB2B string, isProduction bool) cardRegistrationModels.CardRegistrationResponseDTO
 	DoRefund(refundRequestDTO refundModels.RefundRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, tokenB2B2C string, isProduction bool) refundModels.RefundResponseDTO
+	DoCheckStatus(checkStatusRequestDTO checkStatusModels.CheckStatusRequestDTO, secretKey string, clientId string, tokenB2B string, isProduction bool) (checkStatusModels.CheckStatusResponseDTO, error)
 	DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO registrationCardUnbindingModels.CardRegistrationUnbindingRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, isProduction bool) registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO
 }
 
@@ -128,6 +130,34 @@ func (dd *DirectDebitController) DoRefund(refundRequestDTO refundModels.RefundRe
 	requestHeader := snapUtils.GenerateRequestHeaderDto("SDK", signature, timestamp, clientId, externalId, "", ipAddress, tokenB2B, tokenB2B2C)
 	return directDebitService.DoRefundProcess(requestHeader, refundRequestDTO, isProduction)
 
+}
+
+func (dd *DirectDebitController) DoCheckStatus(checkStatusRequestDTO checkStatusModels.CheckStatusRequestDTO, secretKey string, clientId string, tokenB2B string, isProduction bool) (checkStatusModels.CheckStatusResponseDTO, error) {
+
+	url := config.GetBaseUrl(isProduction) + commons.DIRECT_DEBIT_CHECK_STATUS
+
+	minifiedRequestBody, err := json.Marshal(checkStatusRequestDTO)
+	if err != nil {
+		return checkStatusModels.CheckStatusResponseDTO{
+			ResponseCode:    "500",
+			ResponseMessage: fmt.Sprintf("Error marshalling request body: %v", err),
+		}, err
+	}
+
+	timestamp := tokenServices.GenerateTimestamp()
+	externalId := snapUtils.GenerateExternalId()
+	signature := tokenServices.GenerateSymetricSignature("POST", url, tokenB2B, minifiedRequestBody, timestamp, secretKey)
+
+	requestHeader := snapUtils.GenerateRequestHeaderDto(
+		"SDK", signature, timestamp, clientId, externalId, "", "", tokenB2B, "",
+	)
+
+	checkStatusResponse, err := directDebitService.DoCheckStatusProcess(requestHeader, checkStatusRequestDTO, isProduction)
+	if err != nil {
+		return checkStatusResponse, fmt.Errorf("error in DoCheckStatusProcess: %v", err)
+	}
+
+	return checkStatusResponse, nil
 }
 
 func (dd *DirectDebitController) DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO registrationCardUnbindingModels.CardRegistrationUnbindingRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, isProduction bool) registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO {
