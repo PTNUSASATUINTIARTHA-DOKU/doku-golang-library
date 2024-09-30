@@ -65,12 +65,42 @@ func (ts TokenServices) CreateSignature(privateKeyPem string, clientID string, x
 	return base64.StdEncoding.EncodeToString(signature), err
 }
 
-func (ts TokenServices) CompareSignature(requestSignature string, newSignature string) bool {
-	if requestSignature == newSignature {
-		return true
-	} else {
-		return false
+func (ts TokenServices) CompareSignatures(clientId, timestamp, signature, publicKeyDOKU string) (bool, error) {
+	strToSign := fmt.Sprintf("%s|%s", clientId, timestamp)
+
+	block, _ := pem.Decode([]byte(publicKeyDOKU))
+	if block == nil {
+		fmt.Println("failed to parse PEM block containing the public key")
+		return false, errors.New("failed to parse PEM block containing the public key")
 	}
+
+	pubKey, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		fmt.Println("failed to parse public key")
+		return false, fmt.Errorf("failed to parse public key: %v", err)
+	}
+
+	rsaPubKey, ok := pubKey.(*rsa.PublicKey)
+	if !ok {
+		fmt.Println("public key is not of type RSA")
+		return false, errors.New("public key is not of type RSA")
+	}
+
+	hashed := sha256.Sum256([]byte(strToSign))
+
+	sigBytes, err := base64.StdEncoding.DecodeString(signature)
+	if err != nil {
+		fmt.Println("failed to decode base64 signature")
+		return false, fmt.Errorf("failed to decode base64 signature: %v", err)
+	}
+
+	err = rsa.VerifyPKCS1v15(rsaPubKey, crypto.SHA256, hashed[:], sigBytes)
+	if err != nil {
+		fmt.Printf("signature verification failed: %v", err)
+		return false, fmt.Errorf("signature verification failed: %v", err)
+	}
+
+	return true, nil
 }
 
 func (ts TokenServices) GenerateSymetricSignature(httpMethod string, endPointUrl string, tokenB2B string, minifiedRequestBody []byte, timestamp, clientSecret string) string {
@@ -128,33 +158,33 @@ func (ts TokenServices) CreateTokenB2B(tokenB2BRequestDTO tokenModels.TokenB2BRe
 	}
 	defer res.Body.Close()
 
+	respBody, _ := io.ReadAll(res.Body)
+	fmt.Println("RESPONSE: ", string(respBody))
+
 	var tokenB2BResponse tokenModels.TokenB2BResponseDTO
-	err = json.NewDecoder(res.Body).Decode(&tokenB2BResponse)
-	if err != nil {
-		fmt.Println("Error reading response body:", err)
+	if err := json.Unmarshal(respBody, &tokenB2BResponse); err != nil {
+		fmt.Println("error unmarshaling response JSON: ", err)
 	}
 
 	return tokenB2BResponse
 }
 
-func (ts TokenServices) ValidateTokenB2B(requestTokenB2B string, publicKey string) bool {
+func (ts TokenServices) ValidateTokenB2B(requestTokenB2B string, publicKey string) (bool, error) {
+	requestTokenB2B = strings.TrimPrefix(requestTokenB2B, "Bearer ")
 
 	block, _ := pem.Decode([]byte(publicKey))
 	if block == nil || block.Type != "PUBLIC KEY" {
-		fmt.Println("Invalid public key format")
-		return false
+		return false, fmt.Errorf("invalid public key format")
 	}
 
 	parsedKey, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-		fmt.Println("Failed to parse public key:", err)
-		return false
+		return false, fmt.Errorf("failed to parse public key: %w", err)
 	}
 
 	rsaPublicKey, ok := parsedKey.(*rsa.PublicKey)
 	if !ok {
-		fmt.Println("Invalid public key type")
-		return false
+		return false, fmt.Errorf("invalid public key type")
 	}
 
 	_, err = jwt.Parse(requestTokenB2B, func(token *jwt.Token) (interface{}, error) {
@@ -165,11 +195,10 @@ func (ts TokenServices) ValidateTokenB2B(requestTokenB2B string, publicKey strin
 	})
 
 	if err != nil {
-		fmt.Println("Invalid token:", err)
-		return false
+		return false, fmt.Errorf("invalid token: %w", err)
 	}
 
-	return true
+	return true, nil
 }
 
 func (ts TokenServices) IsTokenExpired(tokenExpiresIn int, tokenGeneratedTimestamp string) bool {
@@ -246,6 +275,7 @@ func (ts TokenServices) GenerateNotificationTokenDTO(token string, timestamp str
 		Header: tokenHeader,
 		Body:   tokenBody,
 	}
+
 	return response
 }
 
@@ -254,6 +284,7 @@ func (ts TokenServices) GenerateInvalidSignature(timestamp string) notificationT
 		XClientKey: "",
 		XTimeStamp: timestamp,
 	}
+
 	var tokenBody = notificationTokenModels.NotificationTokenBodyDTO{
 		ResponseCode:    "4017300",
 		ResponseMessage: "Unauthorized.Invalid Signature",
@@ -262,10 +293,12 @@ func (ts TokenServices) GenerateInvalidSignature(timestamp string) notificationT
 		ExpiresIn:       0,
 		AdditionalInfo:  "",
 	}
+
 	var response = notificationTokenModels.NotificationTokenDTO{
 		Header: tokenHeader,
 		Body:   tokenBody,
 	}
+
 	return response
 }
 

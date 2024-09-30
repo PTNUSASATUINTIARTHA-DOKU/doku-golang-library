@@ -3,7 +3,7 @@ package cardregistration
 import (
 	"errors"
 
-	directDebitChannel "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons/utils"
+	directDebitChannel "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons/utils/directdebit"
 )
 
 type CardRegistrationRequestDTO struct {

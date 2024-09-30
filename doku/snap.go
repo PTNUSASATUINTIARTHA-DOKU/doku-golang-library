@@ -2,6 +2,7 @@ package doku
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -13,6 +14,7 @@ import (
 	balanceInquiryModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/balanceinquiry"
 	cardRegistrationModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/cardregistration"
 	checkStatusModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/checkstatus"
+	registrationCardUnbindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/cardregistrationunbinding"
 	jumpAppModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/jumpapp"
 	paymentModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/payment"
 	refundModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/refund"
@@ -67,14 +69,8 @@ func (snap *Snap) SetTokenB2B(tokenB2BResponseDTO tokenVaModels.TokenB2BResponse
 }
 
 func (snap *Snap) SetTokenB2B2C(tokenB2B2CResponseDTO tokenVaModels.TokenB2B2CResponseDTO) {
-	layout := "2006-01-02T15:04:05-07:00"
-	expiresAtTime, err := time.Parse(layout, tokenB2B2CResponseDTO.AccessTokenExpiryTime)
-	if err != nil {
-		log.Println(err)
-	}
-
 	snap.tokenB2B2C = tokenB2B2CResponseDTO.AccessToken
-	snap.tokenB2B2CExpiresIn = int(expiresAtTime.Unix())
+	snap.tokenB2B2CExpiresIn = 890
 	snap.tokenB2B2CGeneratedTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
 }
 
@@ -100,7 +96,7 @@ func (snap *Snap) CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto)
 	}
 	createVaResponse := VaController.CreateVa(
 		createVaRequestDto,
-		snap.PrivateKey,
+		snap.SecretKey,
 		snap.ClientId,
 		snap.tokenB2B,
 		snap.IsProduction,
@@ -182,29 +178,33 @@ func (snap *Snap) generateTokenB2B(isSignatureValid bool) notificationTokenModel
 	}
 }
 
-func (snap *Snap) ValidateTokenB2B(requestTokenB2B string) bool {
+func (snap *Snap) ValidateTokenB2B(requestTokenB2B string) (bool, error) {
 	return TokenController.ValidateTokenB2B(requestTokenB2B, snap.PublicKey)
 }
 
-func (snap *Snap) validateSignature(request *http.Request) bool {
-	return TokenController.ValidateSignature(request, snap.PrivateKey, snap.ClientId)
+func (snap *Snap) validateSignature(request *http.Request, publicKeyDOKU string) bool {
+	return TokenController.ValidateSignature(request, snap.PrivateKey, snap.ClientId, publicKeyDOKU)
 }
 
-func (snap *Snap) ValidateSignatureAndGenerateToken(request *http.Request) notificationTokenModels.NotificationTokenDTO {
-	var isSignatureValid = snap.validateSignature(request)
+func (snap *Snap) ValidateSignatureAndGenerateToken(request *http.Request, publicKeyDOKU string) notificationTokenModels.NotificationTokenDTO {
+	var isSignatureValid = snap.validateSignature(request, publicKeyDOKU)
 	return snap.generateTokenB2B(isSignatureValid)
 }
 
-func (snap *Snap) GenerateNotificationResponse(isTokenValid bool, paymentNotificationRequestBodyDTO notificationPaymentModels.PaymentNotificationRequestBodyDTO) notificationPaymentModels.PaymentNotificationResponseBodyDTO {
+func (snap *Snap) GenerateNotificationResponse(isTokenValid bool, paymentNotificationRequestBodyDTO notificationPaymentModels.PaymentNotificationRequestBodyDTO) (notificationPaymentModels.PaymentNotificationResponseBodyDTO, error) {
 	if isTokenValid {
-		return NotificationController.GenerateNotificationResponse(paymentNotificationRequestBodyDTO)
+		return NotificationController.GenerateNotificationResponse(paymentNotificationRequestBodyDTO), nil
 	} else {
-		return NotificationController.GenerateInvalidTokenResponse(paymentNotificationRequestBodyDTO)
+		return NotificationController.GenerateInvalidTokenResponse(paymentNotificationRequestBodyDTO), fmt.Errorf("invalid token")
 	}
 }
 
-func (snap *Snap) ValidateTokenAndGenerateNotificationResponse(requestTokenB2B string, paymentNotificationRequestBodyDTO notificationPaymentModels.PaymentNotificationRequestBodyDTO) notificationPaymentModels.PaymentNotificationResponseBodyDTO {
-	isTokenValid := snap.ValidateTokenB2B(requestTokenB2B)
+func (snap *Snap) ValidateTokenAndGenerateNotificationResponse(requestTokenB2B string, paymentNotificationRequestBodyDTO notificationPaymentModels.PaymentNotificationRequestBodyDTO) (notificationPaymentModels.PaymentNotificationResponseBodyDTO, error) {
+	isTokenValid, err := snap.ValidateTokenB2B(requestTokenB2B)
+	if err != nil {
+		return notificationPaymentModels.PaymentNotificationResponseBodyDTO{}, fmt.Errorf("token validation failed: %w", err)
+	}
+
 	return snap.GenerateNotificationResponse(isTokenValid, paymentNotificationRequestBodyDTO)
 }
 
@@ -246,7 +246,10 @@ func (snap *Snap) DoBalanceInquiry(balanceInquiryRequestDto balanceInquiryModels
 
 func (snap *Snap) DoPayment(paymentRequestDTO paymentModels.PaymentRequestDTO, ipAddress string, authCode string) paymentModels.PaymentResponseDTO {
 	if err := paymentRequestDTO.ValidatePaymentRequest(); err != nil {
-		log.Println(err)
+		return paymentModels.PaymentResponseDTO{
+			ResponseCode:    "500",
+			ResponseMessage: err.Error(),
+		}
 	}
 
 	isTokenB2BInvalid := TokenController.IsTokenInvalid(snap.tokenB2B, snap.tokenExpiresIn, snap.tokenGeneratedTimestamp)
@@ -318,6 +321,7 @@ func (snap *Snap) DoRefund(refundRequestDTO refundModels.RefundRequestDTO, ipAdd
 	return DirectDebitController.DoRefund(refundRequestDTO, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B, snap.tokenB2B2C, snap.IsProduction)
 }
 
+
 func (snap *Snap) DoCheckStatus(checkStatusRequestDTO checkStatusModels.CheckStatusRequestDTO) (checkStatusModels.CheckStatusResponseDTO, error) {
 	err := checkStatusRequestDTO.ValidateCheckStatusRequest()
 	if err != nil {
@@ -334,4 +338,18 @@ func (snap *Snap) DoCheckStatus(checkStatusRequestDTO checkStatusModels.CheckSta
 	}
 
 	return DirectDebitController.DoCheckStatus(checkStatusRequestDTO, snap.SecretKey, snap.ClientId, snap.tokenB2B, snap.IsProduction)
+}
+
+func (snap *Snap) DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO registrationCardUnbindingModels.CardRegistrationUnbindingRequestDTO, ipAddress string) registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO {
+	if err := cardRegistrationUnbindingRequestDTO.ValidateCardRegistrationUnbindingRequest(); err != nil {
+		log.Println(err)
+	}
+
+	isTokenInvalid := TokenController.IsTokenInvalid(snap.tokenB2B, snap.tokenExpiresIn, snap.tokenGeneratedTimestamp)
+
+	if isTokenInvalid {
+		snap.GetTokenB2B()
+	}
+
+	return DirectDebitController.DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B, snap.IsProduction)
 }

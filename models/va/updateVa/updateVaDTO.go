@@ -340,7 +340,7 @@ func (dto *UpdateVaDTO) ValidateSimulatorASPI() (bool, UpdateVaResponseDTO) {
 	}
 
 	if _, valid := strings.CutPrefix(dto.TrxId, "113"); valid {
-		var vaData createVaModels.VirtualAccountData
+		var vaData UpdateVaDTO
 		vaData.CustomerNo = "00000000000000000000"
 		vaData.VirtualAccountNo = "0000000000000000000000000000"
 		vaData.VirtualAccountName = "Jokul Doe 001"
@@ -351,12 +351,12 @@ func (dto *UpdateVaDTO) ValidateSimulatorASPI() (bool, UpdateVaResponseDTO) {
 
 		updateVaResponseDto.ResponseCode = "4002702"
 		updateVaResponseDto.ResponseMessage = "Invalid Mandatory Field partnerServiceId"
-		updateVaResponseDto.VirtualAccountData = &vaData
+		updateVaResponseDto.VirtualAccountData = vaData
 		return true, updateVaResponseDto
 	}
 
 	if _, valid := strings.CutPrefix(dto.TrxId, "114"); valid {
-		var vaData createVaModels.VirtualAccountData
+		var vaData UpdateVaDTO
 		vaData.CustomerNo = "00000000000000000000"
 		vaData.VirtualAccountNo = "0000000000000000000000000000"
 		vaData.VirtualAccountName = "Jokul Doe 001"
@@ -367,7 +367,7 @@ func (dto *UpdateVaDTO) ValidateSimulatorASPI() (bool, UpdateVaResponseDTO) {
 
 		updateVaResponseDto.ResponseCode = "4002701"
 		updateVaResponseDto.ResponseMessage = "Invalid Mandatory Field totalAmount.currency"
-		updateVaResponseDto.VirtualAccountData = &vaData
+		updateVaResponseDto.VirtualAccountData = vaData
 		return true, updateVaResponseDto
 	}
 

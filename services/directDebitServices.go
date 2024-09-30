@@ -14,6 +14,7 @@ import (
 	balanceInquiryModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/balanceinquiry"
 	cardRegistrationModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/cardregistration"
 	checkStatusModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/checkstatus"
+	registrationCardUnbindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/cardregistrationunbinding"
 	jumpAppModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/jumpapp"
 	paymentModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/payment"
 	refundModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/refund"
@@ -23,12 +24,19 @@ import (
 type DirectDebitService struct{}
 
 func (dd *DirectDebitService) DoAccountBindingProcess(requestHeaderDTO createVaModels.RequestHeaderDTO, accountBindingRequestDTO accountBindingModels.AccountBindingRequestDTO, isProduction bool) accountBindingModels.AccountBindingResponseDto {
+	if err := requestHeaderDTO.ValidateAccountBinding(accountBindingRequestDTO.AdditionalInfo.Channel); err != nil {
+		return accountBindingModels.AccountBindingResponseDto{
+			ResponseCode:    "500",
+			ResponseMessage: err.Error(),
+		}
+	}
 	url := config.GetBaseUrl(isProduction) + commons.DIRECT_DEBIT_ACCOUNT_BINDING
 	header := map[string]string{
 		"X-TIMESTAMP":   requestHeaderDTO.XTimestamp,
 		"X-SIGNATURE":   requestHeaderDTO.XSignature,
 		"X-PARTNER-ID":  requestHeaderDTO.XPartnerId,
 		"X-EXTERNAL-ID": requestHeaderDTO.XExternalId,
+		"X-DEVICE-ID":   requestHeaderDTO.XDeviceId,
 		"X-IP-ADDRESS":  requestHeaderDTO.XIpAddress,
 		"Authorization": "Bearer " + requestHeaderDTO.Authorization,
 		"Content-Type":  "application/json",
@@ -69,6 +77,12 @@ func (dd *DirectDebitService) DoAccountBindingProcess(requestHeaderDTO createVaM
 }
 
 func (dd *DirectDebitService) DoBalanceInquiryProcess(requestHeaderDTO createVaModels.RequestHeaderDTO, balanceInquiryRequestDto balanceInquiryModels.BalanceInquiryRequestDto, isProduction bool) balanceInquiryModels.BalanceInquiryResponseDto {
+	if err := requestHeaderDTO.ValidateCheckBalance(balanceInquiryRequestDto.AdditionalInfo.Channel); err != nil {
+		return balanceInquiryModels.BalanceInquiryResponseDto{
+			ResponseCode:    "500",
+			ResponseMessage: err.Error(),
+		}
+	}
 	url := config.GetBaseUrl(isProduction) + commons.DIRECT_DEBIT_BALANCE_INQUIRY_URL
 	header := map[string]string{
 		"X-TIMESTAMP":            requestHeaderDTO.XTimestamp,
@@ -115,6 +129,12 @@ func (dd *DirectDebitService) DoBalanceInquiryProcess(requestHeaderDTO createVaM
 }
 
 func (dd *DirectDebitService) DoPaymentProcess(requestHeaderDTO createVaModels.RequestHeaderDTO, paymentRequestDTO paymentModels.PaymentRequestDTO, isProduction bool) paymentModels.PaymentResponseDTO {
+	if err := requestHeaderDTO.ValidatePaymentAndRefund(paymentRequestDTO.AdditionalInfo.Channel); err != nil {
+		return paymentModels.PaymentResponseDTO{
+			ResponseCode:    "500",
+			ResponseMessage: err.Error(),
+		}
+	}
 	url := config.GetBaseUrl(isProduction) + commons.DIRECT_DEBIT_PAYMENT
 	header := map[string]string{
 		"X-TIMESTAMP":            requestHeaderDTO.XTimestamp,
@@ -298,6 +318,12 @@ func (dd *DirectDebitService) DoCardRegistrationProcess(requestHeaderDTO createV
 }
 
 func (dd *DirectDebitService) DoRefundProcess(requestHeaderDTO createVaModels.RequestHeaderDTO, refundRequestDTO refundModels.RefundRequestDTO, isProduction bool) refundModels.RefundResponseDTO {
+	if err := requestHeaderDTO.ValidatePaymentAndRefund(refundRequestDTO.AdditionalInfo.Channel); err != nil {
+		return refundModels.RefundResponseDTO{
+			ResponseCode:    "500",
+			ResponseMessage: err.Error(),
+		}
+	}
 	url := config.GetBaseUrl(isProduction) + commons.DIRECT_DEBIT_REFUND
 	header := map[string]string{
 		"X-TIMESTAMP":            requestHeaderDTO.XTimestamp,
@@ -404,4 +430,55 @@ func (dd *DirectDebitService) DoCheckStatusProcess(requestHeaderDTO createVaMode
 	}
 
 	return checkStatusResponse, nil
+}
+
+func (dd *DirectDebitService) DoCardRegistrationUnbindingProcess(requestHeaderDTO createVaModels.RequestHeaderDTO, registrationCardUnbindingRequestDTO registrationCardUnbindingModels.CardRegistrationUnbindingRequestDTO, isProduction bool) registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO {
+    if err := requestHeaderDTO.ValidateAccountUnbinding(registrationCardUnbindingRequestDTO.AdditionalInfo.Channel); err != nil {
+        return registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO{
+            ResponseCode:    "500",
+            ResponseMessage: err.Error(),
+        }
+    }
+    url := config.GetBaseUrl(isProduction) + commons.DIRECT_DEBIT_CARD_UNBINDING
+    header := map[string]string{
+        "X-TIMESTAMP":   requestHeaderDTO.XTimestamp,
+        "X-SIGNATURE":   requestHeaderDTO.XSignature,
+        "X-PARTNER-ID":  requestHeaderDTO.XPartnerId,
+        "X-EXTERNAL-ID": requestHeaderDTO.XExternalId,
+        "X-IP-ADDRESS":  requestHeaderDTO.XIpAddress,
+        "Authorization": "Bearer " + requestHeaderDTO.Authorization,
+        "Content-Type":  "application/json",
+    }
+
+    bodyRequest, err := json.Marshal(registrationCardUnbindingRequestDTO)
+    if err != nil {
+        fmt.Println("Error parse body request :", err)
+    }
+
+    req, err := http.NewRequest("POST", url, bytes.NewBuffer(bodyRequest))
+    if err != nil {
+        fmt.Println("Error body request :", err)
+    }
+
+    for key, value := range header {
+        req.Header.Set(key, value)
+    }
+
+    client := &http.Client{
+        Timeout: time.Second * 30,
+    }
+    resp, err := client.Do(req)
+    if err != nil {
+        fmt.Println("Error response :", err)
+    }
+    defer resp.Body.Close()
+
+    respBody, _ := io.ReadAll(resp.Body)
+    fmt.Println("RESPONSE: ", string(respBody))
+
+    var cardRegistrationUnbindingResponse registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO
+    if err := json.Unmarshal(respBody, &cardRegistrationUnbindingResponse); err != nil {
+        fmt.Println("error unmarshaling response JSON: ", err)
+    }
+    return cardRegistrationUnbindingResponse
 }

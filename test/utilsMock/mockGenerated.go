@@ -93,7 +93,7 @@ func (mr *MockGenerated) UpdateVaRequestDTO() updateVaModels.UpdateVaDTO {
 }
 
 func (mr *MockGenerated) UpdateVaResponseDTO() updateVaModels.UpdateVaResponseDTO {
-	virtualAccountData := createVaModels.VirtualAccountData{
+	virtualAccountData := updateVaModels.UpdateVaDTO{
 		PartnerServiceId:    "    1899",
 		CustomerNo:          "20240704001",
 		VirtualAccountNo:    "    189920240704001",
@@ -104,15 +104,18 @@ func (mr *MockGenerated) UpdateVaResponseDTO() updateVaModels.UpdateVaResponseDT
 			Value:    "11000.00",
 			Currency: "IDR",
 		},
-		AdditionalInfo: createVaModels.AdditionalInfoResponse{
-			HowToPayPage: "howToPayPage",
-			HowToPayApi:  "howToPayApi",
+		AdditionalInfo: updateVaModels.UpdateVaAdditionalInfoDTO{
+			Channel: "",
+			VirtualAccountConfig: updateVaModels.UpdateVaVirtualAccountConfigDTO{
+				ReusableStatus: true,
+				Status:         "",
+			},
 		},
 	}
 	return updateVaModels.UpdateVaResponseDTO{
 		ResponseCode:       "2002700",
 		ResponseMessage:    "Successful",
-		VirtualAccountData: &virtualAccountData,
+		VirtualAccountData: virtualAccountData,
 	}
 }
 

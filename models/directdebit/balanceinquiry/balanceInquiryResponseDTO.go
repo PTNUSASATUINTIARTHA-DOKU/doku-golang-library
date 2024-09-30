@@ -7,7 +7,7 @@ import (
 type BalanceInquiryResponseDto struct {
 	ResponseCode    string            `json:"responseCode,omitempty"`
 	ResponseMessage string            `json:"responseMessage,omitempty"`
-	AccountInfos    []AccountInfosDto `json:"accountInfos"`
+	AccountInfos    []AccountInfosDto `json:"accountInfos,omitempty"`
 }
 
 type AccountInfosDto struct {
