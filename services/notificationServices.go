@@ -1,6 +1,7 @@
 package services
 
 import (
+	notifDirectDebitModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/notification"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 	notification "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/notification"
 	paymentNotifModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/notification/payment"
@@ -39,5 +40,20 @@ func (ns NotificationServices) GenerateInvalidTokenNotificationResponse(paymentN
 			VirtualAccountName: paymentNotificationRequestBodyDTO.VirtualAccountName,
 			PaymentRequestId:   paymentNotificationRequestBodyDTO.PaymentRequestId,
 		},
+	}
+}
+
+func (ns NotificationServices) GenerateDirectDebitNotificationResponse() notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO {
+	return notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO{
+		ResponseCode:    "2005600",
+		ResponseMessage: "Request has been processed successfully",
+		ApprovalCode:    "201039000200",
+	}
+}
+
+func (ns NotificationServices) GenerateDirectDebitInvalidTokenNotificationResponse() notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO {
+	return notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO{
+		ResponseCode:    "5005600",
+		ResponseMessage: "Invalid Token",
 	}
 }

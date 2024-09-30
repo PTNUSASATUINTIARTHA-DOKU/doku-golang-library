@@ -12,11 +12,11 @@ import (
 )
 
 type Origin struct {
-	Product       string `json:"product"`
-	Source        string `json:"source"`
-	SourceVersion string `json:"sourceVersion"`
-	System        string `json:"system"`
-	ApiFormat     string `json:"apiFormat"`
+	Product       string `json:"product,omitempty"`
+	Source        string `json:"source,omitempty"`
+	SourceVersion string `json:"sourceVersion,omitempty"`
+	System        string `json:"system,omitempty"`
+	ApiFormat     string `json:"apiFormat,omitempty"`
 }
 
 type CreateVaRequestDto struct {
