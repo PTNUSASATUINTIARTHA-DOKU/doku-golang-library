@@ -13,9 +13,10 @@ import (
 	accountUnbindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/accountunbinding"
 	balanceInquiryModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/balanceinquiry"
 	cardRegistrationModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/cardregistration"
-	checkStatusModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/checkstatus"
 	registrationCardUnbindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/cardregistrationunbinding"
+	checkStatusModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/checkstatus"
 	jumpAppModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/jumpapp"
+	notifDirectDebitModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/notification"
 	paymentModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/payment"
 	refundModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/refund"
 	tokenVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/token"
@@ -321,7 +322,6 @@ func (snap *Snap) DoRefund(refundRequestDTO refundModels.RefundRequestDTO, ipAdd
 	return DirectDebitController.DoRefund(refundRequestDTO, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B, snap.tokenB2B2C, snap.IsProduction)
 }
 
-
 func (snap *Snap) DoCheckStatus(checkStatusRequestDTO checkStatusModels.CheckStatusRequestDTO) (checkStatusModels.CheckStatusResponseDTO, error) {
 	err := checkStatusRequestDTO.ValidateCheckStatusRequest()
 	if err != nil {
@@ -352,4 +352,31 @@ func (snap *Snap) DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDT
 	}
 
 	return DirectDebitController.DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B, snap.IsProduction)
+}
+
+func (snap *Snap) DirectDebitPaymentNotification(requestTokenB2B string, requestTokenB2B2C string, publicKey string) (notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO, error) {
+	isTokenB2BValid, errB2B := snap.ValidateTokenB2B(requestTokenB2B)
+	if errB2B != nil {
+		return notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO{
+			ResponseCode:    "500",
+			ResponseMessage: errB2B.Error(),
+		}, errB2B
+	}
+
+	isTokenB2B2CValid, errB2BC := snap.ValidateTokenB2B(requestTokenB2B2C)
+	if errB2BC != nil {
+		return notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO{
+			ResponseCode:    "500",
+			ResponseMessage: errB2BC.Error(),
+		}, errB2BC
+	}
+	return snap.GenerateDirectDebitNotificationResponse(isTokenB2BValid, isTokenB2B2CValid), nil
+}
+
+func (snap *Snap) GenerateDirectDebitNotificationResponse(isTokenB2BValid bool, isTokenB2B2CValid bool) notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO {
+	if isTokenB2BValid && isTokenB2B2CValid {
+		return NotificationController.GenerateDirectDebitNotificationResponse()
+	} else {
+		return NotificationController.GenerateDirectDebitInvalidTokenResponse()
+	}
 }

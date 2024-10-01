@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	notifDirectDebitModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/notification"
 	paymentNotifModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/notification/payment"
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/services"
 )
@@ -8,6 +9,8 @@ import (
 type NotificationInterface interface {
 	GenerateNotificationResponse(paymentNotificationRequestBodyDTO paymentNotifModels.PaymentNotificationRequestBodyDTO) paymentNotifModels.PaymentNotificationResponseBodyDTO
 	GenerateInvalidTokenResponse(paymentNotificationRequestBodyDTO paymentNotifModels.PaymentNotificationRequestBodyDTO) paymentNotifModels.PaymentNotificationResponseBodyDTO
+	GenerateDirectDebitNotificationResponse() notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO
+	GenerateDirectDebitInvalidTokenResponse() notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO
 }
 
 var NotificationService services.NotificationServices
@@ -20,4 +23,12 @@ func (nc NotificationController) GenerateNotificationResponse(paymentNotificatio
 
 func (nc NotificationController) GenerateInvalidTokenResponse(paymentNotificationRequestBodyDTO paymentNotifModels.PaymentNotificationRequestBodyDTO) paymentNotifModels.PaymentNotificationResponseBodyDTO {
 	return NotificationService.GenerateInvalidTokenNotificationResponse(paymentNotificationRequestBodyDTO)
+}
+
+func (nc NotificationController) GenerateDirectDebitNotificationResponse() notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO {
+	return NotificationService.GenerateDirectDebitNotificationResponse()
+}
+
+func (nc NotificationController) GenerateDirectDebitInvalidTokenResponse() notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO {
+	return NotificationService.GenerateDirectDebitInvalidTokenNotificationResponse()
 }
