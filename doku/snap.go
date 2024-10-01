@@ -57,10 +57,16 @@ func (snap *Snap) GetTokenB2B() tokenVaModels.TokenB2BResponseDTO {
 	return tokenB2BResponseDTO
 }
 
-func (snap *Snap) GetTokenB2B2C(authCode string) tokenVaModels.TokenB2B2CResponseDTO {
-	tokenB2B2CResponseDTO := TokenController.GetTokenB2B2C(authCode, snap.PrivateKey, snap.ClientId, snap.IsProduction)
+func (snap *Snap) GetTokenB2B2C(authCode string) (tokenVaModels.TokenB2B2CResponseDTO, error) {
+	tokenB2B2CResponseDTO, err := TokenController.GetTokenB2B2C(authCode, snap.PrivateKey, snap.ClientId, snap.IsProduction)
+	if err != nil {
+		return tokenVaModels.TokenB2B2CResponseDTO{
+			ResponseCode:    "5007400",
+			ResponseMessage: err.Error(),
+		}, err
+	}
 	snap.SetTokenB2B2C(tokenB2B2CResponseDTO)
-	return tokenB2B2CResponseDTO
+	return tokenB2B2CResponseDTO, nil
 }
 
 func (snap *Snap) SetTokenB2B(tokenB2BResponseDTO tokenVaModels.TokenB2BResponseDTO) {
@@ -225,14 +231,28 @@ func (snap *Snap) DirectInquiryResponseMapping(xmlData string) (inquiryVaModels.
 	return VaController.DirectInquiryResponseMapping(xmlData)
 }
 
-func (snap *Snap) DoAccountBinding(accountBindingRequest accountBindingModels.AccountBindingRequestDTO, deviceId string, ipAddress string) accountBindingModels.AccountBindingResponseDto {
-	accountBindingRequest.ValidateAccountBindingRequest()
+func (snap *Snap) DoAccountBinding(accountBindingRequest accountBindingModels.AccountBindingRequestDTO, deviceId string, ipAddress string) (accountBindingModels.AccountBindingResponseDTO, error) {
+	err := accountBindingRequest.ValidateAccountBindingRequest()
+	if err != nil {
+		return accountBindingModels.AccountBindingResponseDTO{
+			ResponseCode:    "500700",
+			ResponseMessage: err.Error(),
+		}, err
+	}
 	isTokenInvalid := TokenController.IsTokenInvalid(snap.tokenB2B, snap.tokenExpiresIn, snap.tokenGeneratedTimestamp)
 
 	if isTokenInvalid {
 		snap.GetTokenB2B()
 	}
-	return DirectDebitController.DoAccountBinding(accountBindingRequest, snap.SecretKey, snap.ClientId, deviceId, ipAddress, snap.tokenB2B, snap.IsProduction)
+
+	responseAccountBinding, err := DirectDebitController.DoAccountBinding(accountBindingRequest, snap.SecretKey, snap.ClientId, deviceId, ipAddress, snap.tokenB2B, snap.IsProduction)
+	if err != nil {
+		return accountBindingModels.AccountBindingResponseDTO{
+			ResponseCode:    "5000700",
+			ResponseMessage: err.Error(),
+		}, err
+	}
+	return responseAccountBinding, nil
 }
 
 func (snap *Snap) DoBalanceInquiry(balanceInquiryRequestDto balanceInquiryModels.BalanceInquiryRequestDto, deviceId string, ipAddress string) balanceInquiryModels.BalanceInquiryResponseDto {
@@ -268,9 +288,12 @@ func (snap *Snap) DoPayment(paymentRequestDTO paymentModels.PaymentRequestDTO, i
 	return DirectDebitController.DoPayment(paymentRequestDTO, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B2C, snap.tokenB2B, snap.IsProduction)
 }
 
-func (snap *Snap) DoAccountUnbinding(accountUnbindingRequestDTO accountUnbindingModels.AccountUnbindingRequestDTO, ipAddress string) accountUnbindingModels.AccountUnbindingResponseDTO {
+func (snap *Snap) DoAccountUnbinding(accountUnbindingRequestDTO accountUnbindingModels.AccountUnbindingRequestDTO, ipAddress string) (accountUnbindingModels.AccountUnbindingResponseDTO, error) {
 	if err := accountUnbindingRequestDTO.ValidateAccountUnbindingRequest(); err != nil {
-		log.Println(err)
+		return accountUnbindingModels.AccountUnbindingResponseDTO{
+			ResponseCode:    "5000500",
+			ResponseMessage: err.Error(),
+		}, err
 	}
 
 	isTokenInvalid := TokenController.IsTokenInvalid(snap.tokenB2B, snap.tokenExpiresIn, snap.tokenGeneratedTimestamp)
@@ -279,7 +302,15 @@ func (snap *Snap) DoAccountUnbinding(accountUnbindingRequestDTO accountUnbinding
 		snap.GetTokenB2B()
 	}
 
-	return DirectDebitController.DoAccountUnbinding(accountUnbindingRequestDTO, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B, snap.IsProduction)
+	responseAccountUnbinding, err := DirectDebitController.DoAccountUnbinding(accountUnbindingRequestDTO, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B, snap.IsProduction)
+	if err != nil {
+		return accountUnbindingModels.AccountUnbindingResponseDTO{
+			ResponseCode:    "5000500",
+			ResponseMessage: err.Error(),
+		}, err
+	}
+
+	return responseAccountUnbinding, nil
 }
 
 func (snap *Snap) DoPaymentJumpApp(paymentJumpAppRequestDTO jumpAppModels.PaymentJumpAppRequestDTO, deviceId string, ipAddress string) jumpAppModels.PaymentJumpAppResponseDTO {
@@ -294,15 +325,29 @@ func (snap *Snap) DoPaymentJumpApp(paymentJumpAppRequestDTO jumpAppModels.Paymen
 	return DirectDebitController.DoPaymentJumpApp(paymentJumpAppRequestDTO, snap.SecretKey, snap.ClientId, deviceId, ipAddress, snap.tokenB2B, snap.IsProduction)
 }
 
-func (snap *Snap) DoCardRegistration(cardRegistrationRequestDTO cardRegistrationModels.CardRegistrationRequestDTO, channelId string) cardRegistrationModels.CardRegistrationResponseDTO {
-	cardRegistrationRequestDTO.ValidateCardRegistrationRequest()
+func (snap *Snap) DoCardRegistration(cardRegistrationRequestDTO cardRegistrationModels.CardRegistrationRequestDTO, channelId string) (cardRegistrationModels.CardRegistrationResponseDTO, error) {
+	if err := cardRegistrationRequestDTO.ValidateCardRegistrationRequest(); err != nil {
+		return cardRegistrationModels.CardRegistrationResponseDTO{
+			ResponseCode:    "5000700",
+			ResponseMessage: err.Error(),
+		}, err
+	}
+
 	isTokenInvalid := TokenController.IsTokenInvalid(snap.tokenB2B, snap.tokenExpiresIn, snap.tokenGeneratedTimestamp)
 
 	if isTokenInvalid {
 		snap.GetTokenB2B()
 	}
 
-	return DirectDebitController.DoCardRegistration(cardRegistrationRequestDTO, snap.SecretKey, snap.ClientId, channelId, snap.tokenB2B, snap.IsProduction)
+	responseCardRegistration, err := DirectDebitController.DoCardRegistration(cardRegistrationRequestDTO, snap.SecretKey, snap.ClientId, channelId, snap.tokenB2B, snap.IsProduction)
+	if err != nil {
+		return cardRegistrationModels.CardRegistrationResponseDTO{
+			ResponseCode:    "5000700",
+			ResponseMessage: err.Error(),
+		}, err
+	}
+
+	return responseCardRegistration, nil
 }
 
 func (snap *Snap) DoRefund(refundRequestDTO refundModels.RefundRequestDTO, ipAddress string, authCode string, isProduction bool) refundModels.RefundResponseDTO {
@@ -340,9 +385,12 @@ func (snap *Snap) DoCheckStatus(checkStatusRequestDTO checkStatusModels.CheckSta
 	return DirectDebitController.DoCheckStatus(checkStatusRequestDTO, snap.SecretKey, snap.ClientId, snap.tokenB2B, snap.IsProduction)
 }
 
-func (snap *Snap) DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO registrationCardUnbindingModels.CardRegistrationUnbindingRequestDTO, ipAddress string) registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO {
+func (snap *Snap) DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO registrationCardUnbindingModels.CardRegistrationUnbindingRequestDTO, ipAddress string) (registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO, error) {
 	if err := cardRegistrationUnbindingRequestDTO.ValidateCardRegistrationUnbindingRequest(); err != nil {
-		log.Println(err)
+		return registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO{
+			ResponseCode:    "5000500",
+			ResponseMessage: err.Error(),
+		}, err
 	}
 
 	isTokenInvalid := TokenController.IsTokenInvalid(snap.tokenB2B, snap.tokenExpiresIn, snap.tokenGeneratedTimestamp)
@@ -351,7 +399,15 @@ func (snap *Snap) DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDT
 		snap.GetTokenB2B()
 	}
 
-	return DirectDebitController.DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B, snap.IsProduction)
+	responseCardRegisrtationUnbinding, err := DirectDebitController.DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B, snap.IsProduction)
+	if err != nil {
+		return registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO{
+			ResponseCode:    "5000500",
+			ResponseMessage: err.Error(),
+		}, err
+	}
+
+	return responseCardRegisrtationUnbinding, err
 }
 
 func (snap *Snap) DirectDebitPaymentNotification(requestTokenB2B string, requestTokenB2B2C string, publicKey string) (notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO, error) {

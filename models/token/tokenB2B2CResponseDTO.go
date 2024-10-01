@@ -3,10 +3,10 @@ package models
 type TokenB2B2CResponseDTO struct {
 	ResponseCode           string      `json:"responseCode"`
 	ResponseMessage        string      `json:"responseMessage"`
-	AccessToken            string      `json:"accessToken"`
-	TokenType              string      `json:"tokenType"`
-	AccessTokenExpiryTime  string      `json:"accessTokenExpiryTime"`
-	RefreshToken           string      `json:"refreshToken"`
-	RefreshTokenExpiryTime string      `json:"refreshTokenExpiryTime"`
+	AccessToken            string      `json:"accessToken,omitempty"`
+	TokenType              string      `json:"tokenType,omitempty"`
+	AccessTokenExpiryTime  string      `json:"accessTokenExpiryTime,omitempty"`
+	RefreshToken           string      `json:"refreshToken,omitempty"`
+	RefreshTokenExpiryTime string      `json:"refreshTokenExpiryTime,omitempty"`
 	AdditionalInfo         interface{} `json:"additionalInfo,omitempty"`
 }
