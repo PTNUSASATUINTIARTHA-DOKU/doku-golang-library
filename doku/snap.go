@@ -255,22 +255,42 @@ func (snap *Snap) DoAccountBinding(accountBindingRequest accountBindingModels.Ac
 	return responseAccountBinding, nil
 }
 
-func (snap *Snap) DoBalanceInquiry(balanceInquiryRequestDto balanceInquiryModels.BalanceInquiryRequestDto, deviceId string, ipAddress string) balanceInquiryModels.BalanceInquiryResponseDto {
-	balanceInquiryRequestDto.ValidateBalanceInquiryRequest()
-	isTokenInvalid := TokenController.IsTokenInvalid(snap.tokenB2B, snap.tokenExpiresIn, snap.tokenGeneratedTimestamp)
+func (snap *Snap) DoBalanceInquiry(balanceInquiryRequestDto balanceInquiryModels.BalanceInquiryRequestDto, deviceId string, ipAddress string, authCode string) (balanceInquiryModels.BalanceInquiryResponseDto, error) {
+	err := balanceInquiryRequestDto.ValidateBalanceInquiryRequest()
+	if err != nil {
+		return balanceInquiryModels.BalanceInquiryResponseDto{
+			ResponseCode:    "5001100",
+			ResponseMessage: err.Error(),
+		}, err
+	}
+	isTokenB2BInvalid := TokenController.IsTokenInvalid(snap.tokenB2B, snap.tokenExpiresIn, snap.tokenGeneratedTimestamp)
 
-	if isTokenInvalid {
+	if isTokenB2BInvalid {
 		snap.GetTokenB2B()
 	}
-	return DirectDebitController.DoBalanceInquiry(balanceInquiryRequestDto, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B, snap.tokenB2B2C, snap.IsProduction)
+
+	isTokenB2B2CInvalid := TokenController.IsTokenInvalid(snap.tokenB2B2C, snap.tokenB2B2CExpiresIn, snap.tokenB2B2CGeneratedTimestamp)
+
+	if isTokenB2B2CInvalid {
+		snap.GetTokenB2B2C(authCode)
+	}
+
+	responseBalanceInquiry, err := DirectDebitController.DoBalanceInquiry(balanceInquiryRequestDto, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B, snap.tokenB2B2C, snap.IsProduction)
+	if err != nil {
+		return balanceInquiryModels.BalanceInquiryResponseDto{
+			ResponseCode:    "5001100",
+			ResponseMessage: err.Error(),
+		}, err
+	}
+	return responseBalanceInquiry, nil
 }
 
-func (snap *Snap) DoPayment(paymentRequestDTO paymentModels.PaymentRequestDTO, ipAddress string, authCode string) paymentModels.PaymentResponseDTO {
+func (snap *Snap) DoPayment(paymentRequestDTO paymentModels.PaymentRequestDTO, ipAddress string, authCode string) (paymentModels.PaymentResponseDTO, error) {
 	if err := paymentRequestDTO.ValidatePaymentRequest(); err != nil {
 		return paymentModels.PaymentResponseDTO{
-			ResponseCode:    "500",
+			ResponseCode:    "5005400",
 			ResponseMessage: err.Error(),
-		}
+		}, err
 	}
 
 	isTokenB2BInvalid := TokenController.IsTokenInvalid(snap.tokenB2B, snap.tokenExpiresIn, snap.tokenGeneratedTimestamp)
@@ -285,7 +305,14 @@ func (snap *Snap) DoPayment(paymentRequestDTO paymentModels.PaymentRequestDTO, i
 		snap.GetTokenB2B2C(authCode)
 	}
 
-	return DirectDebitController.DoPayment(paymentRequestDTO, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B2C, snap.tokenB2B, snap.IsProduction)
+	responsePayment, err := DirectDebitController.DoPayment(paymentRequestDTO, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B2C, snap.tokenB2B, snap.IsProduction)
+	if err != nil {
+		return paymentModels.PaymentResponseDTO{
+			ResponseCode:    "5005400",
+			ResponseMessage: err.Error(),
+		}, err
+	}
+	return responsePayment, nil
 }
 
 func (snap *Snap) DoAccountUnbinding(accountUnbindingRequestDTO accountUnbindingModels.AccountUnbindingRequestDTO, ipAddress string) (accountUnbindingModels.AccountUnbindingResponseDTO, error) {
@@ -313,8 +340,14 @@ func (snap *Snap) DoAccountUnbinding(accountUnbindingRequestDTO accountUnbinding
 	return responseAccountUnbinding, nil
 }
 
-func (snap *Snap) DoPaymentJumpApp(paymentJumpAppRequestDTO jumpAppModels.PaymentJumpAppRequestDTO, deviceId string, ipAddress string) jumpAppModels.PaymentJumpAppResponseDTO {
-	paymentJumpAppRequestDTO.ValidatePaymentJumpAppRequest()
+func (snap *Snap) DoPaymentJumpApp(paymentJumpAppRequestDTO jumpAppModels.PaymentJumpAppRequestDTO, deviceId string, ipAddress string) (jumpAppModels.PaymentJumpAppResponseDTO, error) {
+
+	if err := paymentJumpAppRequestDTO.ValidatePaymentJumpAppRequest(); err != nil {
+		return jumpAppModels.PaymentJumpAppResponseDTO{
+			ResponseCode:    "5005400",
+			ResponseMessage: err.Error(),
+		}, err
+	}
 
 	isTokenInvalid := TokenController.IsTokenInvalid(snap.tokenB2B, snap.tokenExpiresIn, snap.tokenGeneratedTimestamp)
 
@@ -322,7 +355,15 @@ func (snap *Snap) DoPaymentJumpApp(paymentJumpAppRequestDTO jumpAppModels.Paymen
 		snap.GetTokenB2B()
 	}
 
-	return DirectDebitController.DoPaymentJumpApp(paymentJumpAppRequestDTO, snap.SecretKey, snap.ClientId, deviceId, ipAddress, snap.tokenB2B, snap.IsProduction)
+	responsePaymentJumpApp, err := DirectDebitController.DoPaymentJumpApp(paymentJumpAppRequestDTO, snap.SecretKey, snap.ClientId, deviceId, ipAddress, snap.tokenB2B, snap.IsProduction)
+	if err != nil {
+		return jumpAppModels.PaymentJumpAppResponseDTO{
+			ResponseCode:    "5005400",
+			ResponseMessage: err.Error(),
+		}, err
+	}
+
+	return responsePaymentJumpApp, nil
 }
 
 func (snap *Snap) DoCardRegistration(cardRegistrationRequestDTO cardRegistrationModels.CardRegistrationRequestDTO, channelId string) (cardRegistrationModels.CardRegistrationResponseDTO, error) {
@@ -350,8 +391,13 @@ func (snap *Snap) DoCardRegistration(cardRegistrationRequestDTO cardRegistration
 	return responseCardRegistration, nil
 }
 
-func (snap *Snap) DoRefund(refundRequestDTO refundModels.RefundRequestDTO, ipAddress string, authCode string, isProduction bool) refundModels.RefundResponseDTO {
-	refundRequestDTO.ValidateRefundRequest()
+func (snap *Snap) DoRefund(refundRequestDTO refundModels.RefundRequestDTO, ipAddress string, authCode string, isProduction bool) (refundModels.RefundResponseDTO, error) {
+	if err := refundRequestDTO.ValidateRefundRequest(); err != nil {
+		return refundModels.RefundResponseDTO{
+			ResponseCode:    "5000700",
+			ResponseMessage: err.Error(),
+		}, err
+	}
 	isTokenB2BInvalid := TokenController.IsTokenInvalid(snap.tokenB2B, snap.tokenExpiresIn, snap.tokenGeneratedTimestamp)
 
 	if isTokenB2BInvalid {
@@ -364,14 +410,21 @@ func (snap *Snap) DoRefund(refundRequestDTO refundModels.RefundRequestDTO, ipAdd
 		snap.GetTokenB2B2C(authCode)
 	}
 
-	return DirectDebitController.DoRefund(refundRequestDTO, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B, snap.tokenB2B2C, snap.IsProduction)
+	responseRefund, err := DirectDebitController.DoRefund(refundRequestDTO, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B, snap.tokenB2B2C, snap.IsProduction)
+	if err != nil {
+		return refundModels.RefundResponseDTO{
+			ResponseCode:    "5000700",
+			ResponseMessage: err.Error(),
+		}, err
+	}
+	return responseRefund, nil
 }
 
 func (snap *Snap) DoCheckStatus(checkStatusRequestDTO checkStatusModels.CheckStatusRequestDTO) (checkStatusModels.CheckStatusResponseDTO, error) {
 	err := checkStatusRequestDTO.ValidateCheckStatusRequest()
 	if err != nil {
 		return checkStatusModels.CheckStatusResponseDTO{
-			ResponseCode:    "400",
+			ResponseCode:    "5002600",
 			ResponseMessage: err.Error(),
 		}, err
 	}
@@ -382,7 +435,15 @@ func (snap *Snap) DoCheckStatus(checkStatusRequestDTO checkStatusModels.CheckSta
 		snap.GetTokenB2B()
 	}
 
-	return DirectDebitController.DoCheckStatus(checkStatusRequestDTO, snap.SecretKey, snap.ClientId, snap.tokenB2B, snap.IsProduction)
+	responseCheckStatus, err := DirectDebitController.DoCheckStatus(checkStatusRequestDTO, snap.SecretKey, snap.ClientId, snap.tokenB2B, snap.IsProduction)
+	if err != nil {
+		return checkStatusModels.CheckStatusResponseDTO{
+			ResponseCode:    "5002600",
+			ResponseMessage: err.Error(),
+		}, err
+	}
+
+	return responseCheckStatus, nil
 }
 
 func (snap *Snap) DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO registrationCardUnbindingModels.CardRegistrationUnbindingRequestDTO, ipAddress string) (registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO, error) {
