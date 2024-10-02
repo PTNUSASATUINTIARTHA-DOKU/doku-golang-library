@@ -391,7 +391,7 @@ func (snap *Snap) DoCardRegistration(cardRegistrationRequestDTO cardRegistration
 	return responseCardRegistration, nil
 }
 
-func (snap *Snap) DoRefund(refundRequestDTO refundModels.RefundRequestDTO, ipAddress string, authCode string, isProduction bool) (refundModels.RefundResponseDTO, error) {
+func (snap *Snap) DoRefund(refundRequestDTO refundModels.RefundRequestDTO, ipAddress string, authCode string, deviceId string) (refundModels.RefundResponseDTO, error) {
 	if err := refundRequestDTO.ValidateRefundRequest(); err != nil {
 		return refundModels.RefundResponseDTO{
 			ResponseCode:    "5000700",
@@ -410,7 +410,7 @@ func (snap *Snap) DoRefund(refundRequestDTO refundModels.RefundRequestDTO, ipAdd
 		snap.GetTokenB2B2C(authCode)
 	}
 
-	responseRefund, err := DirectDebitController.DoRefund(refundRequestDTO, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B, snap.tokenB2B2C, snap.IsProduction)
+	responseRefund, err := DirectDebitController.DoRefund(refundRequestDTO, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B, snap.tokenB2B2C, deviceId, snap.IsProduction)
 	if err != nil {
 		return refundModels.RefundResponseDTO{
 			ResponseCode:    "5000700",

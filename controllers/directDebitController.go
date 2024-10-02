@@ -24,7 +24,7 @@ type DirectDebitInterface interface {
 	DoAccountUnbinding(accountUnbindingRequestDTO accountUnbindingModels.AccountUnbindingRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, isProduction bool) (accountUnbindingModels.AccountUnbindingResponseDTO, error)
 	DoPaymentJumpApp(paymentJumpAppRequestDTO jumpAppModels.PaymentJumpAppRequestDTO, secretKey string, clientId string, deviceId string, ipAddress string, tokenB2B string, isProduction bool) (jumpAppModels.PaymentJumpAppResponseDTO, error)
 	DoCardRegistration(cardRegistrationRequestDTO cardRegistrationModels.CardRegistrationRequestDTO, secretKey string, clientId string, channelId string, tokenB2B string, isProduction bool) (cardRegistrationModels.CardRegistrationResponseDTO, error)
-	DoRefund(refundRequestDTO refundModels.RefundRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, tokenB2B2C string, isProduction bool) (refundModels.RefundResponseDTO, error)
+	DoRefund(refundRequestDTO refundModels.RefundRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, tokenB2B2C string, deviceId string, isProduction bool) (refundModels.RefundResponseDTO, error)
 	DoCheckStatus(checkStatusRequestDTO checkStatusModels.CheckStatusRequestDTO, secretKey string, clientId string, tokenB2B string, isProduction bool) (checkStatusModels.CheckStatusResponseDTO, error)
 	DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO registrationCardUnbindingModels.CardRegistrationUnbindingRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, isProduction bool) (registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO, error)
 }
@@ -117,7 +117,7 @@ func (dd *DirectDebitController) DoCardRegistration(cardRegistrationRequestDTO c
 	return directDebitService.DoCardRegistrationProcess(requestHeader, cardRegistrationRequestDTO, isProduction)
 }
 
-func (dd *DirectDebitController) DoRefund(refundRequestDTO refundModels.RefundRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, tokenB2B2C string, isProduction bool) (refundModels.RefundResponseDTO, error) {
+func (dd *DirectDebitController) DoRefund(refundRequestDTO refundModels.RefundRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, tokenB2B2C string, deviceId string, isProduction bool) (refundModels.RefundResponseDTO, error) {
 	url := commons.DIRECT_DEBIT_REFUND
 	minifiedRequestBody, err := json.Marshal(refundRequestDTO)
 	if err != nil {
@@ -127,7 +127,7 @@ func (dd *DirectDebitController) DoRefund(refundRequestDTO refundModels.RefundRe
 	timestamp := tokenServices.GenerateTimestamp()
 	externalId := snapUtils.GenerateExternalId()
 	signature := tokenServices.GenerateSymetricSignature(httpMethod, url, tokenB2B, minifiedRequestBody, timestamp, secretKey)
-	requestHeader := snapUtils.GenerateRequestHeaderDto("SDK", signature, timestamp, clientId, externalId, "", ipAddress, tokenB2B, tokenB2B2C)
+	requestHeader := snapUtils.GenerateRequestHeaderDto("", signature, timestamp, clientId, externalId, deviceId, ipAddress, tokenB2B, tokenB2B2C)
 	return directDebitService.DoRefundProcess(requestHeader, refundRequestDTO, isProduction)
 
 }
