@@ -309,7 +309,7 @@ func (ts TokenServices) CreateTokenB2B2CRequestDTO(authCode string) tokenModels.
 	}
 }
 
-func (ts TokenServices) HitTokenB2B2CApi(tokenB2B2CRequestDTO tokenModels.TokenB2B2CRequestDTO, timestamp string, signature string, clientId string, isProduction bool) tokenModels.TokenB2B2CResponseDTO {
+func (ts TokenServices) HitTokenB2B2CApi(tokenB2B2CRequestDTO tokenModels.TokenB2B2CRequestDTO, timestamp string, signature string, clientId string, isProduction bool) (tokenModels.TokenB2B2CResponseDTO, error) {
 	url := config.GetBaseUrl(isProduction) + commons.ACCESS_TOKEN_B2B2C
 	header := map[string]string{
 		"X-TIMESTAMP":  timestamp,
@@ -320,12 +320,12 @@ func (ts TokenServices) HitTokenB2B2CApi(tokenB2B2CRequestDTO tokenModels.TokenB
 
 	bodyRequest, err := json.Marshal(tokenB2B2CRequestDTO)
 	if err != nil {
-		fmt.Println("Error body response :", err)
+		return tokenModels.TokenB2B2CResponseDTO{}, fmt.Errorf("error body response: %w", err)
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(bodyRequest))
 	if err != nil {
-		fmt.Println("Error body request :", err)
+		return tokenModels.TokenB2B2CResponseDTO{}, fmt.Errorf("error body request: %w", err)
 	}
 
 	for key, value := range header {
@@ -337,7 +337,7 @@ func (ts TokenServices) HitTokenB2B2CApi(tokenB2B2CRequestDTO tokenModels.TokenB
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Error response :", err)
+		return tokenModels.TokenB2B2CResponseDTO{}, fmt.Errorf("error response: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -346,8 +346,8 @@ func (ts TokenServices) HitTokenB2B2CApi(tokenB2B2CRequestDTO tokenModels.TokenB
 
 	var tokenB2B2CResponseDTO tokenModels.TokenB2B2CResponseDTO
 	if err := json.Unmarshal(respBody, &tokenB2B2CResponseDTO); err != nil {
-		fmt.Println("error unmarshaling response JSON: ", err)
+		return tokenModels.TokenB2B2CResponseDTO{}, fmt.Errorf("error unmarshaling response JSON: %w", err)
 	}
 
-	return tokenB2B2CResponseDTO
+	return tokenB2B2CResponseDTO, nil
 }

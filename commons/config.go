@@ -1,7 +1,7 @@
 package commons
 
 const (
-	SANDBOX_BASE_URL                 = "https://api-uat.doku.com"
+	SANDBOX_BASE_URL                 = "https://api-sandbox.doku.com"
 	PRODUCTION_BASE_URL              = "https://dashboard.doku.com"
 	ACCESS_TOKEN                     = "/authorization/v1/access-token/b2b"
 	CREATE_VA                        = "/virtual-accounts/bi-snap-va/v1.1/transfer-va/create-va"
@@ -17,7 +17,6 @@ const (
 	DIRECT_DEBIT_REFUND              = "/direct-debit/core/v1/debit/refund"
 	DIRECT_DEBIT_CHECK_STATUS        = "/orders/v1.0/debit/status"
 	DIRECT_DEBIT_CARD_UNBINDING      = "/direct-debit/core/v1/registration-card-unbind"
-
 )
 
 type Config struct{}
