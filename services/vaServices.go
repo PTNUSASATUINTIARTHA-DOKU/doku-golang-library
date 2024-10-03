@@ -57,14 +57,6 @@ func (vs VaServices) CreateVa(
 		"Content-Type":  "application/json",
 	}
 
-	createVaRequestDto.Origin = createVaModels.Origin{
-		Product:       "SDK",
-		Source:        "Golang",
-		SourceVersion: "v1.0.0",
-		System:        "doku-golang-library",
-		ApiFormat:     "SNAP",
-	}
-
 	bodyRequest, err := json.Marshal(createVaRequestDto)
 	if err != nil {
 		fmt.Println("Error body response :", err)
