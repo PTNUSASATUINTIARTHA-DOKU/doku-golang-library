@@ -33,6 +33,13 @@ type VaController struct{}
 func (vc VaController) CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto, secretKey string, clientId string, tokenB2B string, isProduction bool) createVaModels.CreateVaResponseDto {
 	timestamp := tokenServices.GenerateTimestamp()
 	externalId := snapUtils.GenerateExternalId()
+	createVaRequestDto.Origin = createVaModels.Origin{
+		Product:       "SDK",
+		Source:        "Golang",
+		SourceVersion: "v1.0.0",
+		System:        "doku-golang-library",
+		ApiFormat:     "SNAP",
+	}
 	minifiedRequestBody, err := json.Marshal(createVaRequestDto)
 	if err != nil {
 		fmt.Println("Error marshalling request body:", err)
