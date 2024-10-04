@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/controllers"
@@ -472,6 +473,7 @@ func (snap *Snap) DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDT
 }
 
 func (snap *Snap) DirectDebitPaymentNotification(requestTokenB2B2C string, publicKey string) (notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO, error) {
+	requestTokenB2B2C = strings.TrimPrefix(requestTokenB2B2C, "Bearer ")
 	isTokenB2B2CValid, errB2BC := snap.ValidateTokenB2B(requestTokenB2B2C)
 	if errB2BC != nil {
 		return notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO{
