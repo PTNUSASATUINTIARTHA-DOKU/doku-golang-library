@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/controllers"
@@ -471,27 +472,20 @@ func (snap *Snap) DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDT
 	return responseCardRegisrtationUnbinding, err
 }
 
-func (snap *Snap) DirectDebitPaymentNotification(requestTokenB2B string, requestTokenB2B2C string, publicKey string) (notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO, error) {
-	isTokenB2BValid, errB2B := snap.ValidateTokenB2B(requestTokenB2B)
-	if errB2B != nil {
-		return notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO{
-			ResponseCode:    "500",
-			ResponseMessage: errB2B.Error(),
-		}, errB2B
-	}
-
+func (snap *Snap) DirectDebitPaymentNotification(requestTokenB2B2C string) (notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO, error) {
+	requestTokenB2B2C = strings.TrimPrefix(requestTokenB2B2C, "Bearer ")
 	isTokenB2B2CValid, errB2BC := snap.ValidateTokenB2B(requestTokenB2B2C)
 	if errB2BC != nil {
 		return notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO{
-			ResponseCode:    "500",
+			ResponseCode:    "5007400",
 			ResponseMessage: errB2BC.Error(),
 		}, errB2BC
 	}
-	return snap.GenerateDirectDebitNotificationResponse(isTokenB2BValid, isTokenB2B2CValid), nil
+	return snap.GenerateDirectDebitNotificationResponse(isTokenB2B2CValid), nil
 }
 
-func (snap *Snap) GenerateDirectDebitNotificationResponse(isTokenB2BValid bool, isTokenB2B2CValid bool) notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO {
-	if isTokenB2BValid && isTokenB2B2CValid {
+func (snap *Snap) GenerateDirectDebitNotificationResponse(isTokenB2B2CValid bool) notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO {
+	if isTokenB2B2CValid {
 		return NotificationController.GenerateDirectDebitNotificationResponse()
 	} else {
 		return NotificationController.GenerateDirectDebitInvalidTokenResponse()

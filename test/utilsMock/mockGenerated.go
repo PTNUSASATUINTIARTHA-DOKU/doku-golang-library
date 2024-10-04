@@ -146,11 +146,6 @@ func (mr *MockGenerated) CheckStatusVa() checkVaModels.CheckStatusVaResponseDto 
 				Currency: "IDR",
 			},
 		}},
-		AdditionalInfo: checkVaModels.CheckStatusResponseAdditionalInfo{
-			Acquirer: checkVaModels.AcquirerDetails{
-				Id: "BANK_CIMB",
-			},
-		},
 		TrxId: "7041",
 	}
 	return checkVaModels.CheckStatusVaResponseDto{
