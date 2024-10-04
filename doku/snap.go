@@ -475,7 +475,7 @@ func (snap *Snap) DirectDebitPaymentNotification(requestTokenB2B2C string, publi
 	isTokenB2B2CValid, errB2BC := snap.ValidateTokenB2B(requestTokenB2B2C)
 	if errB2BC != nil {
 		return notifDirectDebitModels.NotificationPaymentDirectDebitResponseDTO{
-			ResponseCode:    "500",
+			ResponseCode:    "5007400",
 			ResponseMessage: errB2BC.Error(),
 		}, errB2BC
 	}
