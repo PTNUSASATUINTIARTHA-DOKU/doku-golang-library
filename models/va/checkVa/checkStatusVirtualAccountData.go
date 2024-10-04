@@ -15,7 +15,6 @@ type CheckStatusVirtualAccountData struct {
 	VirtualAccountNumber *string                              `json:"virtualAccountNumber"`
 	PaidAmount           createVaModels.TotalAmount           `json:"paidAmount"`
 	BillDetails          []CheckStatusBillDetail              `json:"billDetails"`
-	AdditionalInfo       CheckStatusResponseAdditionalInfo    `json:"additionalInfo"`
 }
 
 type CheckStatusBillDetail struct {
