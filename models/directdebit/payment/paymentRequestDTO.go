@@ -10,9 +10,10 @@ import (
 type PaymentRequestDTO struct {
 	PartnerReferenceNo string                     `json:"partnerReferenceNo"`
 	FeeType            string                     `json:"feeType,omitempty"` //ovo
-	Amount             createVaModels.TotalAmount `json:"totalAmount"`
+	Amount             createVaModels.TotalAmount `json:"amount"`
 	PayOptionDetails   []PayOptionDetailsDTO      `json:"payOptionDetails,omitempty"` //allo, ovo
 	AdditionalInfo     PaymentAdditionalInfoDTO   `json:"additionalInfo"`
+	ChargeToken        string                     `json:"chargeToken"`
 }
 
 type PayOptionDetailsDTO struct {
