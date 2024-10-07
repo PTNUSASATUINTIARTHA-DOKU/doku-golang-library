@@ -71,7 +71,7 @@ func (dd *DirectDebitController) DoPayment(paymentRequestDTO paymentModels.Payme
 	timestamp := tokenServices.GenerateTimestamp()
 	signature := tokenServices.GenerateSymetricSignature(httpMethod, url, tokenB2B, minifiedRequestBody, timestamp, secretKey)
 	externalId := snapUtils.GenerateExternalId()
-	requestHeader := snapUtils.GenerateRequestHeaderDto("SDK", signature, timestamp, clientId, externalId, "", ipAddress, tokenB2B, tokenB2B2C)
+	requestHeader := snapUtils.GenerateRequestHeaderDto("DH", signature, timestamp, clientId, externalId, "", ipAddress, tokenB2B, tokenB2B2C)
 	return directDebitService.DoPaymentProcess(requestHeader, paymentRequestDTO, isProduction)
 }
 
@@ -146,7 +146,7 @@ func (dd *DirectDebitController) DoCheckStatus(checkStatusRequestDTO checkStatus
 	signature := tokenServices.GenerateSymetricSignature("POST", url, tokenB2B, minifiedRequestBody, timestamp, secretKey)
 
 	requestHeader := snapUtils.GenerateRequestHeaderDto(
-		"SDK", signature, timestamp, clientId, externalId, "", "", tokenB2B, "",
+		"DH", signature, timestamp, clientId, externalId, "", "", tokenB2B, "",
 	)
 
 	checkStatusResponse, err := directDebitService.DoCheckStatusProcess(requestHeader, checkStatusRequestDTO, isProduction)
