@@ -4,6 +4,15 @@ import (
 	"errors"
 	"net/http"
 
+	accountBindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/accountbinding"
+	accountUnbindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/accountunbinding"
+	balanceInquiryModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/balanceinquiry"
+	cardRegistrationModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/cardregistration"
+	registrationCardUnbindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/cardregistrationunbinding"
+	checkStatusModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/checkstatus"
+	jumpAppModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/jumpapp"
+	paymentModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/payment"
+	refundModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/refund"
 	models "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/token"
 	checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
 	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
@@ -29,11 +38,11 @@ func (m *MockController) IsTokenInvalid(tokenB2B string, tokenExpiresIn int, tok
 	return false
 }
 
-func (m *MockController) ValidateTokenB2B(requestTokenB2B string, publicKey string) bool {
-	return false
+func (m *MockController) ValidateTokenB2B(requestTokenB2B string, publicKey string) (bool, error) {
+	return false, nil
 }
 
-func (m *MockController) ValidateSignature(request *http.Request, privateKey string, clientId string) bool {
+func (m *MockController) ValidateSignature(request *http.Request, privateKey string, clientId string, publicKeyDOKU string) bool {
 	return false
 }
 
@@ -41,8 +50,8 @@ func (m *MockController) GenerateTokenB2B(expiredIn int, issuer string, privateK
 	return notificationTokenModels.NotificationTokenDTO{}
 }
 
-func (m *MockController) GetTokenB2B2C(authCode string, privateKey string, clientId string, isProduction bool) models.TokenB2B2CResponseDTO {
-	return models.TokenB2B2CResponseDTO{}
+func (m *MockController) GetTokenB2B2C(authCode string, privateKey string, clientId string, isProduction bool) (models.TokenB2B2CResponseDTO, error) {
+	return models.TokenB2B2CResponseDTO{}, nil
 }
 
 func (m *MockController) GenerateInvalidSignatureResponse() notificationTokenModels.NotificationTokenDTO {
@@ -86,3 +95,49 @@ func (m *MockController) DirectInquiryResponseMapping(xmlData string) (inquiryVa
 }
 
 // End VaController
+
+// DirectDebitController
+func (m *MockController) DoAccountBinding(accountBindingRequest accountBindingModels.AccountBindingRequestDTO, secretKey string, clientId string, deviceId string, ipAddress string, tokenB2B string, isProduction bool) (accountBindingModels.AccountBindingResponseDTO, error) {
+	args := m.Called(accountBindingRequest, secretKey, clientId, deviceId, ipAddress, tokenB2B, isProduction)
+	return args.Get(0).(accountBindingModels.AccountBindingResponseDTO), nil
+}
+
+func (m *MockController) DoBalanceInquiry(balanceInquiryRequestDto balanceInquiryModels.BalanceInquiryRequestDto, secretKey string, clientId string, ipAddress string, tokenB2B string, tokenB2B2C string, isProduction bool) (balanceInquiryModels.BalanceInquiryResponseDto, error) {
+	args := m.Called(balanceInquiryRequestDto, secretKey, clientId, ipAddress, tokenB2B, tokenB2B2C, isProduction)
+	return args.Get(0).(balanceInquiryModels.BalanceInquiryResponseDto), nil
+}
+
+func (m *MockController) DoPayment(paymentRequestDTO paymentModels.PaymentRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B2C string, tokenB2B string, isProduction bool) (paymentModels.PaymentResponseDTO, error) {
+	args := m.Called(paymentRequestDTO, secretKey, clientId, ipAddress, tokenB2B2C, tokenB2B, isProduction)
+	return args.Get(0).(paymentModels.PaymentResponseDTO), nil
+}
+
+func (m *MockController) DoAccountUnbinding(accountUnbindingRequestDTO accountUnbindingModels.AccountUnbindingRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, isProduction bool) (accountUnbindingModels.AccountUnbindingResponseDTO, error) {
+	args := m.Called(accountUnbindingRequestDTO, secretKey, clientId, ipAddress, tokenB2B, isProduction)
+	return args.Get(0).(accountUnbindingModels.AccountUnbindingResponseDTO), nil
+}
+
+func (m *MockController) DoPaymentJumpApp(paymentJumpAppRequestDTO jumpAppModels.PaymentJumpAppRequestDTO, secretKey string, clientId string, deviceId string, ipAddress string, tokenB2B string, isProduction bool) (jumpAppModels.PaymentJumpAppResponseDTO, error) {
+	args := m.Called(paymentJumpAppRequestDTO, secretKey, clientId, deviceId, ipAddress, tokenB2B, isProduction)
+	return args.Get(0).(jumpAppModels.PaymentJumpAppResponseDTO), nil
+}
+
+func (m *MockController) DoCardRegistration(cardRegistrationRequestDTO cardRegistrationModels.CardRegistrationRequestDTO, secretKey string, clientId string, channelId string, tokenB2B string, isProduction bool) (cardRegistrationModels.CardRegistrationResponseDTO, error) {
+	args := m.Called(cardRegistrationRequestDTO, secretKey, clientId, channelId, tokenB2B, isProduction)
+	return args.Get(0).(cardRegistrationModels.CardRegistrationResponseDTO), nil
+}
+
+func (m *MockController) DoRefund(refundRequestDTO refundModels.RefundRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, tokenB2B2C string, deviceId string, isProduction bool) (refundModels.RefundResponseDTO, error) {
+	args := m.Called(refundRequestDTO, secretKey, clientId, ipAddress, tokenB2B, tokenB2B2C, deviceId, isProduction)
+	return args.Get(0).(refundModels.RefundResponseDTO), nil
+}
+
+func (m *MockController) DoCheckStatus(checkStatusRequestDTO checkStatusModels.CheckStatusRequestDTO, secretKey string, clientId string, tokenB2B string, isProduction bool) (checkStatusModels.CheckStatusResponseDTO, error) {
+	args := m.Called(checkStatusRequestDTO, secretKey, clientId, tokenB2B, isProduction)
+	return args.Get(0).(checkStatusModels.CheckStatusResponseDTO), nil
+}
+
+func (m *MockController) DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO registrationCardUnbindingModels.CardRegistrationUnbindingRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, isProduction bool) (registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO, error) {
+	args := m.Called(cardRegistrationUnbindingRequestDTO, secretKey, clientId, ipAddress, tokenB2B, isProduction)
+	return args.Get(0).(registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO), nil
+}

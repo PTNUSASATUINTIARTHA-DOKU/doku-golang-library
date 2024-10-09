@@ -42,7 +42,7 @@ func TestGetTokenB2BInvalidClientId(t *testing.T) {
 func TestCreateVaSuccess(t *testing.T) {
 
 	doku.VaController = mockController
-	mockController.On("CreateVa", mockGenerated.CreateVaRequestDTO(), "privateKeyPem", "clientId", "TOKEN_B2B", false).Return(mockGenerated.CreateVaResponseDTO())
+	mockController.On("CreateVa", mockGenerated.CreateVaRequestDTO(), "", "clientId", "TOKEN_B2B", false).Return(mockGenerated.CreateVaResponseDTO())
 	snap := doku.Snap{
 		PrivateKey:   "privateKeyPem",
 		ClientId:     "clientId",
@@ -1112,5 +1112,664 @@ func TestDeletePaymentCodeChannelInvalidFormat(t *testing.T) {
 	if !strings.Contains(err.Error(), expectedError) {
 		t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
 	}
+
+}
+
+// Direct Debit Unit Test
+func TestDirectDebit(t *testing.T) {
+
+	t.Run("TestAccountBindingSuccess", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		mockController.On("DoAccountBinding", mockGenerated.AccountBindingRequest(), "secretKey", "clientId", "deviceId", "ipAddress", "TOKEN_B2B", false).Return(mockGenerated.AccountBindingResponse())
+		snap := doku.Snap{
+			PrivateKey:   "privateKeyPem",
+			ClientId:     "clientId",
+			SecretKey:    "secretKey",
+			IsProduction: false,
+		}
+		snap.SetTokenB2B(mockGenerated.GetTokenB2BResponseDTO("2007300"))
+		actualResponse, _ := snap.DoAccountBinding(mockGenerated.AccountBindingRequest(), "deviceId", "ipAddress")
+		assert.Equal(t, "2000700", actualResponse.ResponseCode)
+	})
+
+	t.Run("TestAccountBindingPhoneNumberIsNull", func(t *testing.T) {
+		request := mockGenerated.AccountBindingRequest()
+		request.PhoneNo = ""
+		err := request.ValidateAccountBindingRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "phoneNo cannot be null. Please provide a phoneNo. Example: '62813941306101'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestAccountBindingPhoneNumberLessThan9", func(t *testing.T) {
+		request := mockGenerated.AccountBindingRequest()
+		request.PhoneNo = "12345678"
+		err := request.ValidateAccountBindingRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "phoneNo must be at least 9 digits. Example: '62813941306101'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestAccountBindingPhoneNumberMoreThan18", func(t *testing.T) {
+		request := mockGenerated.AccountBindingRequest()
+		request.PhoneNo = "123456789123456788"
+		err := request.ValidateAccountBindingRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "phoneNo must be 16 characters or fewer. Example: '62813941306101'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestAccountBindingChannelInvalid", func(t *testing.T) {
+		request := mockGenerated.AccountBindingRequest()
+		request.AdditionalInfo.Channel = ""
+		err := request.ValidateAccountBindingRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "additionalInfo.channel is not valid. Ensure it is one of the valid channels like 'DIRECT_DEBIT_ALLO_SNAP'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestAccountBindingCustIdMerchantisNull", func(t *testing.T) {
+		request := mockGenerated.AccountBindingRequest()
+		request.AdditionalInfo.CustIdMerchant = ""
+		err := request.ValidateAccountBindingRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "additionalInfo.custIdMerchant cannot be null. Example: 'cust-001'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestAccountBindingCustIdMerchantMoreThan64", func(t *testing.T) {
+		request := mockGenerated.AccountBindingRequest()
+		request.AdditionalInfo.CustIdMerchant = "INV100INV100INV100INV100INV100INV100INV100INV100INV100INV100INV100INV100INV100INV100INV100INV100INV100INV100INV100"
+		err := request.ValidateAccountBindingRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "additionalInfo.custIdMerchant must be 64 characters or fewer. Example: 'cust-001'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestAccountBindingUrlSuccessIsNull", func(t *testing.T) {
+		request := mockGenerated.AccountBindingRequest()
+		request.AdditionalInfo.SuccessRegistrationUrl = ""
+		err := request.ValidateAccountBindingRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "additionalInfo.SuccessRegistrationUrl cannot be null. Example: 'https://www.doku.com'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestAccountBindingUrlFailedIsNull", func(t *testing.T) {
+		request := mockGenerated.AccountBindingRequest()
+		request.AdditionalInfo.FailedRegistrationUrl = ""
+		err := request.ValidateAccountBindingRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "additionalInfo.FailedRegistrationUrl cannot be null. Example: 'https://www.doku.com'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestAccountUnbindingChannelInvalid", func(t *testing.T) {
+		request := mockGenerated.AccountUnbindingRequest()
+		request.AdditionalInfo.Channel = ""
+		err := request.ValidateAccountUnbindingRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "additionalInfo.channel is not valid. Ensure that additionalInfo.channel is one of the valid channels. Example: 'DIRECT_DEBIT_ALLO_SNAP'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestAccountUnbindingSuccess", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		mockController.On("DoAccountUnbinding", mockGenerated.AccountUnbindingRequest(), "secretKey", "clientId", "ipAddress", "TOKEN_B2B", false).Return(mockGenerated.AccountUnbindingResponse())
+		snap := doku.Snap{
+			PrivateKey:   "privateKeyPem",
+			ClientId:     "clientId",
+			SecretKey:    "secretKey",
+			IsProduction: false,
+		}
+		snap.SetTokenB2B(mockGenerated.GetTokenB2BResponseDTO("2007300"))
+		actualResponse, _ := snap.DoAccountUnbinding(mockGenerated.AccountUnbindingRequest(), "ipAddress")
+		assert.Equal(t, "2000900", actualResponse.ResponseCode)
+	})
+
+	t.Run("TestAccountUnbindingTokenInvalid", func(t *testing.T) {
+		request := mockGenerated.AccountUnbindingRequest()
+		request.TokenId = "eyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE3MjkwNTA5ODcsImlzcyI6IkRPS1UiLCJjbGllbnRJZCI6IkJSTi0wMjA1LTE3MjcxNzQ2Mzk4MDEiLCJhY2NvdW50SWQiOiIyZjAzYjY1ODdlZDE5ZmJkYjE5MTJjOTEzNzljMTEwZiJ9.S0kMrOOR8_kur2iU3YbzlMkVtWexM_jziYFY1uaJI3bYdNZ7TnPD1ZYOI-_v4tzQn6on0Rozp00_WdQFMmdoXu9lIBkprEz9e2rN2_tg1tUSXPG6SW5umgf9IV0n1Ro2M5Xfvh4zRFboAU4SvqlSbVM57Vk0LBMTWn8ah0NaBIL40p-UB1UfZ8q5-jyshFszS7S59c21fMA8FXFH_Zz6hjk7HWaAjYPPRmuAkEs3liWYaAoGS_eHL0p_t_IpBlOBsMe6dJhpeDllwole7sptJ1Hckux6mSB4zIKUIrQHZW8F3hTCV1Mx1Hkome7e_6f0VJDsclXbe48xWVtidd2C8weyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE3MjkwNTA5ODcsImlzcyI6IkRPS1UiLCJjbGllbnRJZCI6IkJSTi0wMjA1LTE3MjcxNzQ2Mzk4MDEiLCJhY2NvdW50SWQiOiIyZjAzYjY1ODdlZDE5ZmJkYjE5MTJjOTEzNzljMTEwZiJ9.S0kMrOOR8_kur2iU3YbzlMkVtWexM_jziYFY1uaJI3bYdNZ7TnPD1ZYOI-_v4tzQn6on0Rozp00_WdQFMmdoXu9lIBkprEz9e2rN2_tg1tUSXPG6SW5umgf9IV0n1Ro2M5Xfvh4zRFboAU4SvqlSbVM57Vk0LBMTWn8ah0NaBIL40p-UB1UfZ8q5-jyshFszS7S59c21fMA8FXFH_Zz6hjk7HWaAjYPPRmuAkEs3liWYaAoGS_eHL0p_t_IpBlOBsMe6dJhpeDllwole7sptJ1Hckux6mSB4zIKUIrQHZW8F3hTCV1Mx1Hkome7e_6f0VJDsclXbe48xWVtidd2C8weyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE3MjkwNTA5ODcsImlzcyI6IkRPS1UiLCJjbGllbnRJZCI6IkJSTi0wMjA1LTE3MjcxNzQ2Mzk4MDEiLCJhY2NvdW50SWQiOiIyZjAzYjY1ODdlZDE5ZmJkYjE5MTJjOTEzNzljMTEwZiJ9.S0kMrOOR8_kur2iU3YbzlMkVtWexM_jziYFY1uaJI3bYdNZ7TnPD1ZYOI-_v4tzQn6on0Rozp00_WdQFMmdoXu9lIBkprEz9e2rN2_tg1tUSXPG6SW5umgf9IV0n1Ro2M5Xfvh4zRFboAU4SvqlSbVM57Vk0LBMTWn8ah0NaBIL40p-UB1UfZ8q5-jyshFszS7S59c21fMA8FXFH_Zz6hjk7HWaAjYPPRmuAkEs3liWYaAoGS_eHL0p_t_IpBlOBsMe6dJhpeDllwole7sptJ1Hckux6mSB4zIKUIrQHZW8F3hTCV1Mx1Hkome7e_6f0VJDsclXbe48xWVtidd2C8weyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE3MjkwNTA5ODcsImlzcyI6IkRPS1UiLCJjbGllbnRJZCI6IkJSTi0wMjA1LTE3MjcxNzQ2Mzk4MDEiLCJhY2NvdW50SWQiOiIyZjAzYjY1ODdlZDE5ZmJkYjE5MTJjOTEzNzljMTEwZiJ9.S0kMrOOR8_kur2iU3YbzlMkVtWexM_jziYFY1uaJI3bYdNZ7TnPD1ZYOI-_v4tzQn6on0Rozp00_WdQFMmdoXu9lIBkprEz9e2rN2_tg1tUSXPG6SW5umgf9IV0n1Ro2M5Xfvh4zRFboAU4SvqlSbVM57Vk0LBMTWn8ah0NaBIL40p-UB1UfZ8q5-jyshFszS7S59c21fMA8FXFH_Zz6hjk7HWaAjYPPRmuAkEs3liWYaAoGS_eHL0p_t_IpBlOBsMe6dJhpeDllwole7sptJ1Hckux6mSB4zIKUIrQHZW8F3hTCV1Mx1Hkome7e_6f0VJDsclXbe48xWVtidd2C8weyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE3MjkwNTA5ODcsImlzcyI6IkRPS1UiLCJjbGllbnRJZCI6IkJSTi0wMjA1LTE3MjcxNzQ2Mzk4MDEiLCJhY2NvdW50SWQiOiIyZjAzYjY1ODdlZDE5ZmJkYjE5MTJjOTEzNzljMTEwZiJ9.S0kMrOOR8_kur2iU3YbzlMkVtWexM_jziYFY1uaJI3bYdNZ7TnPD1ZYOI-_v4tzQn6on0Rozp00_WdQFMmdoXu9lIBkprEz9e2rN2_tg1tUSXPG6SW5umgf9IV0n1Ro2M5Xfvh4zRFboAU4SvqlSbVM57Vk0LBMTWn8ah0NaBIL40p-UB1UfZ8q5-jyshFszS7S59c21fMA8FXFH_Zz6hjk7HWaAjYPPRmuAkEs3liWYaAoGS_eHL0p_t_IpBlOBsMe6dJhpeDllwole7sptJ1Hckux6mSB4zIKUIrQHZW8F3hTCV1Mx1Hkome7e_6f0VJDsclXbe48xWVtidd2C8weyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE3MjkwNTA5ODcsImlzcyI6IkRPS1UiLCJjbGllbnRJZCI6IkJSTi0wMjA1LTE3MjcxNzQ2Mzk4MDEiLCJhY2NvdW50SWQiOiIyZjAzYjY1ODdlZDE5ZmJkYjE5MTJjOTEzNzljMTEwZiJ9.S0kMrOOR8_kur2iU3YbzlMkVtWexM_jziYFY1uaJI3bYdNZ7TnPD1ZYOI-_v4tzQn6on0Rozp00_WdQFMmdoXu9lIBkprEz9e2rN2_tg1tUSXPG6SW5umgf9IV0n1Ro2M5Xfvh4zRFboAU4SvqlSbVM57Vk0LBMTWn8ah0NaBIL40p-UB1UfZ8q5-jyshFszS7S59c21fMA8FXFH_Zz6hjk7HWaAjYPPRmuAkEs3liWYaAoGS_eHL0p_t_IpBlOBsMe6dJhpeDllwole7sptJ1Hckux6mSB4zIKUIrQHZW8F3hTCV1Mx1Hkome7e_6f0VJDsclXbe48xWVtidd2C8weyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE3MjkwNTA5ODcsImlzcyI6IkRPS1UiLCJjbGllbnRJZCI6IkJSTi0wMjA1LTE3MjcxNzQ2Mzk4MDEiLCJhY2NvdW50SWQiOiIyZjAzYjY1ODdlZDE5ZmJkYjE5MTJjOTEzNzljMTEwZiJ9.S0kMrOOR8_kur2iU3YbzlMkVtWexM_jziYFY1uaJI3bYdNZ7TnPD1ZYOI-_v4tzQn6on0Rozp00_WdQFMmdoXu9lIBkprEz9e2rN2_tg1tUSXPG6SW5umgf9IV0n1Ro2M5Xfvh4zRFboAU4SvqlSbVM57Vk0LBMTWn8ah0NaBIL40p-UB1UfZ8q5-jyshFszS7S59c21fMA8FXFH_Zz6hjk7HWaAjYPPRmuAkEs3liWYaAoGS_eHL0p_t_IpBlOBsMe6dJhpeDllwole7sptJ1Hckux6mSB4zIKUIrQHZW8F3hTCV1Mx1Hkome7e_6f0VJDsclXbe48xWVtidd2C8w"
+		err := request.ValidateAccountUnbindingRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "tokenId must be 2048 characters or fewer. Ensure that tokenId is no longer than 2048 characters. Example: 'eyJhbGciOiJSUzI1NiJ...'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestBalanceInquirySuccess", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		mockController.On("DoBalanceInquiry", mockGenerated.BalanceInquiryRequest(), "secretKey", "clientId", "ipAddress", "TOKEN_B2B", "TOKEN_B2B2C", false).Return(mockGenerated.BalanceInquiryResponse())
+		snap := doku.Snap{
+			PrivateKey:   "privateKeyPem",
+			ClientId:     "clientId",
+			SecretKey:    "secretKey",
+			IsProduction: false,
+		}
+		snap.SetTokenB2B(mockGenerated.GetTokenB2BResponseDTO("2007300"))
+		snap.SetTokenB2B2C(mockGenerated.GetTokenB2B2CResponseDTO("2007400"))
+		actualResponse, _ := snap.DoBalanceInquiry(mockGenerated.BalanceInquiryRequest(), "deviceId", "ipAddress", "authCode")
+		assert.Equal(t, "2001100", actualResponse.ResponseCode)
+	})
+
+	t.Run("TestBalanceInquiryChannelInvalid", func(t *testing.T) {
+		request := mockGenerated.BalanceInquiryRequest()
+		request.AdditionalInfo.Channel = ""
+		err := request.ValidateBalanceInquiryRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "additionalInfo.channel is not valid. Ensure that additionalInfo.channel is one of the valid channels. Example: 'DIRECT_DEBIT_ALLO_SNAP'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestCheckStatusDirectDebitSuccess", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		mockController.On("DoCheckStatus", mockGenerated.CheckStatusRequest(), "secretKey", "clientId", "TOKEN_B2B", false).Return(mockGenerated.CheckStatusResponse())
+		snap := doku.Snap{
+			PrivateKey:   "privateKeyPem",
+			ClientId:     "clientId",
+			SecretKey:    "secretKey",
+			IsProduction: false,
+		}
+		snap.SetTokenB2B(mockGenerated.GetTokenB2BResponseDTO("2007300"))
+		actualResponse, _ := snap.DoCheckStatus(mockGenerated.CheckStatusRequest())
+		assert.Equal(t, "2005500", actualResponse.ResponseCode)
+	})
+
+	t.Run("TestCheckStatusDirectDebitAndEwalletWithInvalidServiceCode", func(t *testing.T) {
+		request := mockGenerated.CheckStatusRequest()
+		request.ServiceCode = ""
+		err := request.ValidateCheckStatusRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "serviceCode must be 55"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestCheckStatusEwallettSuccess", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		request := mockGenerated.CheckStatusRequest()
+		request.AdditionalInfo.Channel = "EMONEY_OVO_SNAP"
+		mockController.On("DoCheckStatus", mockGenerated.CheckStatusRequest(), "secretKey", "clientId", "TOKEN_B2B", false).Return(mockGenerated.CheckStatusResponse())
+		snap := doku.Snap{
+			PrivateKey:   "privateKeyPem",
+			ClientId:     "clientId",
+			SecretKey:    "secretKey",
+			IsProduction: false,
+		}
+		snap.SetTokenB2B(mockGenerated.GetTokenB2BResponseDTO("2007300"))
+		actualResponse, _ := snap.DoCheckStatus(mockGenerated.CheckStatusRequest())
+		assert.Equal(t, "2005500", actualResponse.ResponseCode)
+	})
+
+	t.Run("TestCardRegistrationSuccess", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		mockController.On("DoCardRegistration", mockGenerated.CardRegistrationRequest(), "secretKey", "clientId", "channelId", "TOKEN_B2B", false).Return(mockGenerated.CardRegistrationResponse())
+		snap := doku.Snap{
+			PrivateKey:   "privateKeyPem",
+			ClientId:     "clientId",
+			SecretKey:    "secretKey",
+			IsProduction: false,
+		}
+		snap.SetTokenB2B(mockGenerated.GetTokenB2BResponseDTO("2007300"))
+		actualResponse, _ := snap.DoCardRegistration(mockGenerated.CardRegistrationRequest(), "channelId")
+		assert.Equal(t, "2000100", actualResponse.ResponseCode)
+	})
+
+	t.Run("TestCardRegistrationCardDataInvalid", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		request := mockGenerated.CardRegistrationRequest()
+		request.CardData = ""
+		err := request.ValidateCardRegistrationRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "cardData cannot be null. Please provide cardData. Example: '5cg2G2719+jxU1RfcGmeCyQrLagUaAWJWWhLpmmb'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestCardRegistrationCustIdMerchantNull", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		request := mockGenerated.CardRegistrationRequest()
+		request.CustIdMerchant = ""
+		err := request.ValidateCardRegistrationRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "custIdMerchant cannot be null"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestCardRegistrationCustIdMerchantMoreThan64", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		request := mockGenerated.CardRegistrationRequest()
+		request.CustIdMerchant = "12345678901234567890123456789012345678901234567890123456789011234567890123456789012345678901234567890123456789012345678901"
+		err := request.ValidateCardRegistrationRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "custIdMerchant must be 64 characters or fewer"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestCardRegistrationChannelInvalid", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		request := mockGenerated.CardRegistrationRequest()
+		request.AdditionalInfo.Channel = ""
+		err := request.ValidateCardRegistrationRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "additionalInfo.channel is not valid"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestCardRegistrationUrlSuccessNull", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		request := mockGenerated.CardRegistrationRequest()
+		request.AdditionalInfo.SuccessRegistrationUrl = ""
+		err := request.ValidateCardRegistrationRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "additionalInfo.SuccessRegistrationUrl cannot be null. Example: 'https://www.doku.com'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestCardRegistrationUrlFailedNull", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		request := mockGenerated.CardRegistrationRequest()
+		request.AdditionalInfo.FailedRegistrationUrl = ""
+		err := request.ValidateCardRegistrationRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "additionalInfo.FailedRegistrationUrl cannot be null. Example: 'https://www.doku.com'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestCardRegistrationUnbindingSuccess", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		mockController.On("DoCardRegistrationUnbinding", mockGenerated.CardRegistrationUnbindingRequest(), "secretKey", "clientId", "ipAddress", "TOKEN_B2B", false).Return(mockGenerated.CardRegistrationUnbindingResponse())
+		snap := doku.Snap{
+			PrivateKey:   "privateKeyPem",
+			ClientId:     "clientId",
+			SecretKey:    "secretKey",
+			IsProduction: false,
+		}
+		snap.SetTokenB2B(mockGenerated.GetTokenB2BResponseDTO("2007300"))
+		actualResponse, _ := snap.DoCardRegistrationUnbinding(mockGenerated.CardRegistrationUnbindingRequest(), "ipAddress")
+		assert.Equal(t, "2000500", actualResponse.ResponseCode)
+	})
+
+	t.Run("TestCardRegistrationUnbindingTokenIdInvalid", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		request := mockGenerated.CardRegistrationUnbindingRequest()
+		request.TokenId = "eyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE3MjkwNTA5ODcsImlzcyI6IkRPS1UiLCJjbGllbnRJZCI6IkJSTi0wMjA1LTE3MjcxNzQ2Mzk4MDEiLCJhY2NvdW50SWQiOiIyZjAzYjY1ODdlZDE5ZmJkYjE5MTJjOTEzNzljMTEwZiJ9.S0kMrOOR8_kur2iU3YbzlMkVtWexM_jziYFY1uaJI3bYdNZ7TnPD1ZYOI-_v4tzQn6on0Rozp00_WdQFMmdoXu9lIBkprEz9e2rN2_tg1tUSXPG6SW5umgf9IV0n1Ro2M5Xfvh4zRFboAU4SvqlSbVM57Vk0LBMTWn8ah0NaBIL40p-UB1UfZ8q5-jyshFszS7S59c21fMA8FXFH_Zz6hjk7HWaAjYPPRmuAkEs3liWYaAoGS_eHL0p_t_IpBlOBsMe6dJhpeDllwole7sptJ1Hckux6mSB4zIKUIrQHZW8F3hTCV1Mx1Hkome7e_6f0VJDsclXbe48xWVtidd2C8weyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE3MjkwNTA5ODcsImlzcyI6IkRPS1UiLCJjbGllbnRJZCI6IkJSTi0wMjA1LTE3MjcxNzQ2Mzk4MDEiLCJhY2NvdW50SWQiOiIyZjAzYjY1ODdlZDE5ZmJkYjE5MTJjOTEzNzljMTEwZiJ9.S0kMrOOR8_kur2iU3YbzlMkVtWexM_jziYFY1uaJI3bYdNZ7TnPD1ZYOI-_v4tzQn6on0Rozp00_WdQFMmdoXu9lIBkprEz9e2rN2_tg1tUSXPG6SW5umgf9IV0n1Ro2M5Xfvh4zRFboAU4SvqlSbVM57Vk0LBMTWn8ah0NaBIL40p-UB1UfZ8q5-jyshFszS7S59c21fMA8FXFH_Zz6hjk7HWaAjYPPRmuAkEs3liWYaAoGS_eHL0p_t_IpBlOBsMe6dJhpeDllwole7sptJ1Hckux6mSB4zIKUIrQHZW8F3hTCV1Mx1Hkome7e_6f0VJDsclXbe48xWVtidd2C8weyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE3MjkwNTA5ODcsImlzcyI6IkRPS1UiLCJjbGllbnRJZCI6IkJSTi0wMjA1LTE3MjcxNzQ2Mzk4MDEiLCJhY2NvdW50SWQiOiIyZjAzYjY1ODdlZDE5ZmJkYjE5MTJjOTEzNzljMTEwZiJ9.S0kMrOOR8_kur2iU3YbzlMkVtWexM_jziYFY1uaJI3bYdNZ7TnPD1ZYOI-_v4tzQn6on0Rozp00_WdQFMmdoXu9lIBkprEz9e2rN2_tg1tUSXPG6SW5umgf9IV0n1Ro2M5Xfvh4zRFboAU4SvqlSbVM57Vk0LBMTWn8ah0NaBIL40p-UB1UfZ8q5-jyshFszS7S59c21fMA8FXFH_Zz6hjk7HWaAjYPPRmuAkEs3liWYaAoGS_eHL0p_t_IpBlOBsMe6dJhpeDllwole7sptJ1Hckux6mSB4zIKUIrQHZW8F3hTCV1Mx1Hkome7e_6f0VJDsclXbe48xWVtidd2C8weyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE3MjkwNTA5ODcsImlzcyI6IkRPS1UiLCJjbGllbnRJZCI6IkJSTi0wMjA1LTE3MjcxNzQ2Mzk4MDEiLCJhY2NvdW50SWQiOiIyZjAzYjY1ODdlZDE5ZmJkYjE5MTJjOTEzNzljMTEwZiJ9.S0kMrOOR8_kur2iU3YbzlMkVtWexM_jziYFY1uaJI3bYdNZ7TnPD1ZYOI-_v4tzQn6on0Rozp00_WdQFMmdoXu9lIBkprEz9e2rN2_tg1tUSXPG6SW5umgf9IV0n1Ro2M5Xfvh4zRFboAU4SvqlSbVM57Vk0LBMTWn8ah0NaBIL40p-UB1UfZ8q5-jyshFszS7S59c21fMA8FXFH_Zz6hjk7HWaAjYPPRmuAkEs3liWYaAoGS_eHL0p_t_IpBlOBsMe6dJhpeDllwole7sptJ1Hckux6mSB4zIKUIrQHZW8F3hTCV1Mx1Hkome7e_6f0VJDsclXbe48xWVtidd2C8weyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE3MjkwNTA5ODcsImlzcyI6IkRPS1UiLCJjbGllbnRJZCI6IkJSTi0wMjA1LTE3MjcxNzQ2Mzk4MDEiLCJhY2NvdW50SWQiOiIyZjAzYjY1ODdlZDE5ZmJkYjE5MTJjOTEzNzljMTEwZiJ9.S0kMrOOR8_kur2iU3YbzlMkVtWexM_jziYFY1uaJI3bYdNZ7TnPD1ZYOI-_v4tzQn6on0Rozp00_WdQFMmdoXu9lIBkprEz9e2rN2_tg1tUSXPG6SW5umgf9IV0n1Ro2M5Xfvh4zRFboAU4SvqlSbVM57Vk0LBMTWn8ah0NaBIL40p-UB1UfZ8q5-jyshFszS7S59c21fMA8FXFH_Zz6hjk7HWaAjYPPRmuAkEs3liWYaAoGS_eHL0p_t_IpBlOBsMe6dJhpeDllwole7sptJ1Hckux6mSB4zIKUIrQHZW8F3hTCV1Mx1Hkome7e_6f0VJDsclXbe48xWVtidd2C8weyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE3MjkwNTA5ODcsImlzcyI6IkRPS1UiLCJjbGllbnRJZCI6IkJSTi0wMjA1LTE3MjcxNzQ2Mzk4MDEiLCJhY2NvdW50SWQiOiIyZjAzYjY1ODdlZDE5ZmJkYjE5MTJjOTEzNzljMTEwZiJ9.S0kMrOOR8_kur2iU3YbzlMkVtWexM_jziYFY1uaJI3bYdNZ7TnPD1ZYOI-_v4tzQn6on0Rozp00_WdQFMmdoXu9lIBkprEz9e2rN2_tg1tUSXPG6SW5umgf9IV0n1Ro2M5Xfvh4zRFboAU4SvqlSbVM57Vk0LBMTWn8ah0NaBIL40p-UB1UfZ8q5-jyshFszS7S59c21fMA8FXFH_Zz6hjk7HWaAjYPPRmuAkEs3liWYaAoGS_eHL0p_t_IpBlOBsMe6dJhpeDllwole7sptJ1Hckux6mSB4zIKUIrQHZW8F3hTCV1Mx1Hkome7e_6f0VJDsclXbe48xWVtidd2C8weyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE3MjkwNTA5ODcsImlzcyI6IkRPS1UiLCJjbGllbnRJZCI6IkJSTi0wMjA1LTE3MjcxNzQ2Mzk4MDEiLCJhY2NvdW50SWQiOiIyZjAzYjY1ODdlZDE5ZmJkYjE5MTJjOTEzNzljMTEwZiJ9.S0kMrOOR8_kur2iU3YbzlMkVtWexM_jziYFY1uaJI3bYdNZ7TnPD1ZYOI-_v4tzQn6on0Rozp00_WdQFMmdoXu9lIBkprEz9e2rN2_tg1tUSXPG6SW5umgf9IV0n1Ro2M5Xfvh4zRFboAU4SvqlSbVM57Vk0LBMTWn8ah0NaBIL40p-UB1UfZ8q5-jyshFszS7S59c21fMA8FXFH_Zz6hjk7HWaAjYPPRmuAkEs3liWYaAoGS_eHL0p_t_IpBlOBsMe6dJhpeDllwole7sptJ1Hckux6mSB4zIKUIrQHZW8F3hTCV1Mx1Hkome7e_6f0VJDsclXbe48xWVtidd2C8w"
+		err := request.ValidateCardRegistrationUnbindingRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "tokenId must be 2048 characters or fewer"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestCardRegistrationUnbindingChannelInvalid", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		request := mockGenerated.CardRegistrationUnbindingRequest()
+		request.AdditionalInfo.Channel = ""
+		err := request.ValidateCardRegistrationUnbindingRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "additionalInfo.channel is not valid"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestRefundSuccess", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		mockController.On("DoRefund", mockGenerated.RefundRequest(), "secretKey", "clientId", "ipAddress", "TOKEN_B2B", "TOKEN_B2B2C", "deviceId", false).Return(mockGenerated.RefundResponse())
+		snap := doku.Snap{
+			PrivateKey:   "privateKeyPem",
+			ClientId:     "clientId",
+			SecretKey:    "secretKey",
+			IsProduction: false,
+		}
+		snap.SetTokenB2B(mockGenerated.GetTokenB2BResponseDTO("2007300"))
+		snap.SetTokenB2B2C(mockGenerated.GetTokenB2B2CResponseDTO("2007400"))
+		actualResponse, _ := snap.DoRefund(mockGenerated.RefundRequest(), "ipAddress", "auth", "deviceId")
+		assert.Equal(t, "2000700", actualResponse.ResponseCode)
+	})
+
+	t.Run("TestRefundChannelInvalid", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		request := mockGenerated.RefundRequest()
+		request.AdditionalInfo.Channel = ""
+		err := request.ValidateRefundRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "additionalInfo.channel is not valid"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestRefundAmountLessThan1", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		request := mockGenerated.RefundRequest()
+		request.RefundAmount.Value = ""
+		err := request.ValidateRefundRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "refundAmount.Value must be at least 4 characters long and formatted as 0.00."
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestRefundAmountMoreThan19", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		request := mockGenerated.RefundRequest()
+		request.RefundAmount.Value = "99999999999999999.00"
+		err := request.ValidateRefundRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "refundAmount.Value must be 19 characters or fewer and formatted as 9999999999999999.99. Example: '9999999999999999.99'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestRefundAmountInvalidFormat", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		request := mockGenerated.RefundRequest()
+		request.RefundAmount.Value = "999900"
+		err := request.ValidateRefundRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "refundAmount.Value is in invalid format"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestRefundCurrencyLessThan1", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		request := mockGenerated.RefundRequest()
+		request.RefundAmount.Currency = ""
+		err := request.ValidateRefundRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "must be a string; ensure that refundAmount.Currency is enclosed in quotes, e.g., 'IDR'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestRefundCurrencyLessThan3", func(t *testing.T) {
+		request := mockGenerated.RefundRequest()
+		request.RefundAmount.Currency = "ID"
+		err := request.ValidateRefundRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "refundAmount.currency must be exactly 3 characters long, e.g., 'IDR'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestRefundCurrencyInvalidFormat", func(t *testing.T) {
+		request := mockGenerated.RefundRequest()
+		request.RefundAmount.Currency = "JPY"
+		err := request.ValidateRefundRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "refundAmount.currency must be 'IDR', e.g., 'IDR'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestRefundOriginalPartnerReferenceNoIsNull", func(t *testing.T) {
+		request := mockGenerated.RefundRequest()
+		request.OriginalPartnerReferenceNo = ""
+		err := request.ValidateRefundRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "originalPartnerReferenceNo cannot be null"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestRefundOriginalPartnerReferenceNoMoreThan12", func(t *testing.T) {
+		request := mockGenerated.RefundRequest()
+		request.OriginalPartnerReferenceNo = "1234567890123"
+		err := request.ValidateRefundRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "originalPartnerReferenceNo must be 12 characters or fewer."
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestRefundPartnerRefundNoIsNull", func(t *testing.T) {
+		request := mockGenerated.RefundRequest()
+		request.PartnerRefundNo = ""
+		err := request.ValidateRefundRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "partnerRefundNo cannot be null."
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestRefundPartnerRefundNoMoreThan12", func(t *testing.T) {
+		request := mockGenerated.RefundRequest()
+		request.PartnerRefundNo = "1234567890123"
+		err := request.ValidateRefundRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "partnerRefundNo must be 12 characters or fewer."
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestPaymentDirectDebitSuccess", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		mockController.On("DoPayment", mockGenerated.PaymentDirectDebitRequest(), "secretKey", "clientId", "ipAddress", "TOKEN_B2B2C", "TOKEN_B2B", false).Return(mockGenerated.PaymentDirectDebitResponse())
+		snap := doku.Snap{
+			PrivateKey:   "privateKeyPem",
+			ClientId:     "clientId",
+			SecretKey:    "secretKey",
+			IsProduction: false,
+		}
+		snap.SetTokenB2B(mockGenerated.GetTokenB2BResponseDTO("2007300"))
+		snap.SetTokenB2B2C(mockGenerated.GetTokenB2B2CResponseDTO("2007400"))
+		actualResponse, _ := snap.DoPayment(mockGenerated.PaymentDirectDebitRequest(), "ipAddress", "")
+		assert.Equal(t, "2005400", actualResponse.ResponseCode)
+	})
+
+	t.Run("TestPaymentAmountLessThan1", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		request := mockGenerated.PaymentDirectDebitRequest()
+		request.Amount.Value = ""
+		err := request.ValidatePaymentRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "Amount.Value must be at least 4 characters long and formatted as 0.00."
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestPaymentAmountMoreThan19", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		request := mockGenerated.PaymentDirectDebitRequest()
+		request.Amount.Value = "99999999999999999.00"
+		err := request.ValidatePaymentRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "Amount.Value must be 19 characters or fewer and formatted as 9999999999999999.99. Example: '9999999999999999.99'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestPaymentChannelInvalid", func(t *testing.T) {
+		request := mockGenerated.PaymentDirectDebitRequest()
+		request.AdditionalInfo.Channel = ""
+		err := request.ValidatePaymentRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "additionalInfo.channel is not valid. Ensure that additionalInfo.channel is one of the valid channels. Example: 'DIRECT_DEBIT_ALLO_SNAP"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestPaymentCurrencyLessThan1", func(t *testing.T) {
+		doku.DirectDebitController = mockController
+		request := mockGenerated.PaymentDirectDebitRequest()
+		request.Amount.Currency = ""
+		err := request.ValidatePaymentRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "must be a string; ensure that refundAmount.Currency is enclosed in quotes, e.g., 'IDR'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestPaymentCurrencyLessThan3", func(t *testing.T) {
+		request := mockGenerated.PaymentDirectDebitRequest()
+		request.Amount.Currency = "ID"
+		err := request.ValidatePaymentRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "refundAmount.currency must be exactly 3 characters long, e.g., 'IDR'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestPaymentCurrencyInvalidFormat", func(t *testing.T) {
+		request := mockGenerated.PaymentDirectDebitRequest()
+		request.Amount.Currency = "JPY"
+		err := request.ValidatePaymentRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "refundAmount.currency must be 'IDR', e.g., 'IDR'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestPaymentUrlSuccessIsNull", func(t *testing.T) {
+		request := mockGenerated.PaymentDirectDebitRequest()
+		request.AdditionalInfo.SuccessPaymentUrl = ""
+		err := request.ValidatePaymentRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "additionalInfo.SuccessPaymentUrl cannot be null. Example: 'https://www.doku.com'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
+
+	t.Run("TestPaymentUrlFailedIsNull", func(t *testing.T) {
+		request := mockGenerated.PaymentDirectDebitRequest()
+		request.AdditionalInfo.FailedPaymentUrl = ""
+		err := request.ValidatePaymentRequest()
+		if err == nil {
+			t.Fatalf("expected an error, got nil")
+		}
+		expectedError := "additionalInfo.FailedPaymentUrl cannot be null. Example: 'https://www.doku.com'"
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
+		}
+	})
 
 }
