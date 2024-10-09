@@ -14,7 +14,7 @@ import (
 	accountUnbindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/accountunbinding"
 	balanceInquiryModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/balanceinquiry"
 	cardRegistrationModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/cardregistration"
-	registrationCardUnbindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/cardregistrationunbinding"
+	cardRegistrationUnbindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/cardregistrationunbinding"
 	checkStatusModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/checkstatus"
 	jumpAppModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/jumpapp"
 	notifDirectDebitModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/notification"
@@ -303,7 +303,13 @@ func (snap *Snap) DoPayment(paymentRequestDTO paymentModels.PaymentRequestDTO, i
 	isTokenB2B2CInvalid := TokenController.IsTokenInvalid(snap.tokenB2B2C, snap.tokenB2B2CExpiresIn, snap.tokenB2B2CGeneratedTimestamp)
 
 	if isTokenB2B2CInvalid {
-		snap.GetTokenB2B2C(authCode)
+		responseB2B2C, err := snap.GetTokenB2B2C(authCode)
+		if err != nil || responseB2B2C.ResponseCode[:3] == "401" {
+			return paymentModels.PaymentResponseDTO{
+				ResponseCode:    responseB2B2C.ResponseCode,
+				ResponseMessage: responseB2B2C.ResponseMessage,
+			}, err
+		}
 	}
 
 	responsePayment, err := DirectDebitController.DoPayment(paymentRequestDTO, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B2C, snap.tokenB2B, snap.IsProduction)
@@ -447,9 +453,9 @@ func (snap *Snap) DoCheckStatus(checkStatusRequestDTO checkStatusModels.CheckSta
 	return responseCheckStatus, nil
 }
 
-func (snap *Snap) DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO registrationCardUnbindingModels.CardRegistrationUnbindingRequestDTO, ipAddress string) (registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO, error) {
+func (snap *Snap) DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO cardRegistrationUnbindingModels.CardRegistrationUnbindingRequestDTO, ipAddress string) (cardRegistrationUnbindingModels.CardRegistrationUnbindingResponseDTO, error) {
 	if err := cardRegistrationUnbindingRequestDTO.ValidateCardRegistrationUnbindingRequest(); err != nil {
-		return registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO{
+		return cardRegistrationUnbindingModels.CardRegistrationUnbindingResponseDTO{
 			ResponseCode:    "5000500",
 			ResponseMessage: err.Error(),
 		}, err
@@ -463,7 +469,7 @@ func (snap *Snap) DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDT
 
 	responseCardRegisrtationUnbinding, err := DirectDebitController.DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO, snap.SecretKey, snap.ClientId, ipAddress, snap.tokenB2B, snap.IsProduction)
 	if err != nil {
-		return registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO{
+		return cardRegistrationUnbindingModels.CardRegistrationUnbindingResponseDTO{
 			ResponseCode:    "5000500",
 			ResponseMessage: err.Error(),
 		}, err

@@ -28,6 +28,8 @@ type CheckStatusAdditionalInfoRequestDTO struct {
 func (dto *CheckStatusRequestDTO) ValidateCheckStatusRequest() error {
 	if !directDebitChannel.ValidateDirectDebitChannel(dto.AdditionalInfo.Channel) {
 		return errors.New("additionalInfo.channel is not valid. Ensure that additionalInfo.channel is one of the valid channels. Example: 'DIRECT_DEBIT_ALLO_SNAP'")
+	} else if dto.ServiceCode != "55" {
+		return errors.New("serviceCode must be 55")
 	}
 
 	return nil
