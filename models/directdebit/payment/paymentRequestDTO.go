@@ -14,6 +14,7 @@ type PaymentRequestDTO struct {
 	Amount             createVaModels.TotalAmount `json:"amount"`
 	PayOptionDetails   []PayOptionDetailsDTO      `json:"payOptionDetails,omitempty"` //allo, ovo
 	AdditionalInfo     PaymentAdditionalInfoDTO   `json:"additionalInfo"`
+	ChargeToken        string                     `json:"chargeToken"`
 }
 
 type PayOptionDetailsDTO struct {
