@@ -16,25 +16,37 @@ type InquiryRequestBodyDTO struct {
 func (dto *InquiryRequestBodyDTO) ValidateSimulatorASPI() (bool, InquiryResponseBodyDTO) {
 	var inquiryResponseBodyDto InquiryResponseBodyDTO
 
-	if _, valid := strings.CutPrefix(dto.AdditionalInfo.TrxId, "1117"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.AdditionalInfo.TrxId, "1117"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "1117")
+		return validVaNo
+	}() {
 		inquiryResponseBodyDto.ResponseCode = "2003000"
 		inquiryResponseBodyDto.ResponseMessage = "Success"
 		return true, inquiryResponseBodyDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.AdditionalInfo.TrxId, "111"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.AdditionalInfo.TrxId, "111"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "111")
+		return validVaNo
+	}() {
 		inquiryResponseBodyDto.ResponseCode = "4012701"
 		inquiryResponseBodyDto.ResponseMessage = "Access Token Invalid (B2B)"
 		return true, inquiryResponseBodyDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.AdditionalInfo.TrxId, "112"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.AdditionalInfo.TrxId, "112"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "112")
+		return validVaNo
+	}() {
 		inquiryResponseBodyDto.ResponseCode = "4012700"
 		inquiryResponseBodyDto.ResponseMessage = "Unauthorized . Signature Not Match"
 		return true, inquiryResponseBodyDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.AdditionalInfo.TrxId, "113"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.AdditionalInfo.TrxId, "113"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "113")
+		return validVaNo
+	}() {
 		var vaData InquiryRequestVirtualAccountDataDTO
 		vaData.PartnerServiceId = "90341537"
 		vaData.CustomerNo = "00000000000000000000"
@@ -47,7 +59,10 @@ func (dto *InquiryRequestBodyDTO) ValidateSimulatorASPI() (bool, InquiryResponse
 		return true, inquiryResponseBodyDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.AdditionalInfo.TrxId, "114"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.AdditionalInfo.TrxId, "114"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "114")
+		return validVaNo
+	}() {
 		var vaData InquiryRequestVirtualAccountDataDTO
 		vaData.PartnerServiceId = "90341537"
 		vaData.CustomerNo = "00000000000000000000"
@@ -60,31 +75,46 @@ func (dto *InquiryRequestBodyDTO) ValidateSimulatorASPI() (bool, InquiryResponse
 		return true, inquiryResponseBodyDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.AdditionalInfo.TrxId, "115"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.AdditionalInfo.TrxId, "115"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "115")
+		return validVaNo
+	}() {
 		inquiryResponseBodyDto.ResponseCode = "4092700"
 		inquiryResponseBodyDto.ResponseMessage = "Conflict"
 		return true, inquiryResponseBodyDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.AdditionalInfo.TrxId, "116"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.AdditionalInfo.TrxId, "116"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "116")
+		return validVaNo
+	}() {
 		inquiryResponseBodyDto.ResponseCode = "2002400"
 		inquiryResponseBodyDto.ResponseMessage = "Success"
 		return true, inquiryResponseBodyDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.AdditionalInfo.TrxId, "117"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.AdditionalInfo.TrxId, "117"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "117")
+		return validVaNo
+	}() {
 		inquiryResponseBodyDto.ResponseCode = "4042414"
 		inquiryResponseBodyDto.ResponseMessage = "Bill has been paid"
 		return true, inquiryResponseBodyDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.AdditionalInfo.TrxId, "118"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.AdditionalInfo.TrxId, "118"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "118")
+		return validVaNo
+	}() {
 		inquiryResponseBodyDto.ResponseCode = "4042419"
 		inquiryResponseBodyDto.ResponseMessage = "Bill expired"
 		return true, inquiryResponseBodyDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.AdditionalInfo.TrxId, "119"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.AdditionalInfo.TrxId, "119"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "119")
+		return validVaNo
+	}() {
 		inquiryResponseBodyDto.ResponseCode = "4042412"
 		inquiryResponseBodyDto.ResponseMessage = "Bill not found"
 		return true, inquiryResponseBodyDto
