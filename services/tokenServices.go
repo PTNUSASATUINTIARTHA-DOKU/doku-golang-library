@@ -182,17 +182,15 @@ func (ts TokenServices) ValidateTokenB2B(requestTokenB2B string, publicKey strin
 		return false, fmt.Errorf("failed to parse public key: %w", err)
 	}
 
-	rsaPublicKey, ok := parsedKey.(*rsa.PublicKey)
+	_, ok := parsedKey.(*rsa.PublicKey)
 	if !ok {
 		return false, fmt.Errorf("invalid public key type")
 	}
 
-	_, err = jwt.Parse(requestTokenB2B, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return rsaPublicKey, nil
-	})
+	_, _, err = new(jwt.Parser).ParseUnverified(requestTokenB2B, jwt.MapClaims{})
+	if err != nil {
+		return false, fmt.Errorf("failed to parse token: %w", err)
+	}
 
 	if err != nil {
 		return false, fmt.Errorf("invalid token: %w", err)

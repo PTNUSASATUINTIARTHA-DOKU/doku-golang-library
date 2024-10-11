@@ -28,7 +28,47 @@ type CardRegistrationAdditionalInfoRequestDTO struct {
 func (cr *CardRegistrationRequestDTO) ValidateCardRegistrationRequest() error {
 
 	if !directDebitChannel.ValidateDirectDebitChannel(cr.AdditionalInfo.Channel) {
-		return errors.New("additionalInfo.channel is not valid. Ensure that additionalInfo.channel is one of the valid channels. Example: 'DIRECT_DEBIT_ALLO_SNAP'")
+		return errors.New("additionalInfo.channel is not valid. Ensure it is one of the valid channels like 'DIRECT_DEBIT_ALLO_SNAP'")
+	}
+
+	if err := validateCustIdMerchant(cr.CustIdMerchant); err != nil {
+		return err
+	}
+
+	if err := cr.validateAdditionalInfo(); err != nil {
+		return err
+	}
+
+	if err := validateCardData(cr.CardData); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validateCustIdMerchant(custIdMerchant string) error {
+	if custIdMerchant == "" {
+		return errors.New("custIdMerchant cannot be null. Please provide a custIdMerchant. Example: 'cust-001'")
+	}
+	if len(custIdMerchant) > 64 {
+		return errors.New("custIdMerchant must be 64 characters or fewer")
+	}
+	return nil
+}
+
+func (cr *CardRegistrationRequestDTO) validateAdditionalInfo() error {
+	if cr.AdditionalInfo.SuccessRegistrationUrl == "" {
+		return errors.New("additionalInfo.SuccessRegistrationUrl cannot be null. Example: 'https://www.doku.com'")
+	}
+	if cr.AdditionalInfo.FailedRegistrationUrl == "" {
+		return errors.New("additionalInfo.FailedRegistrationUrl cannot be null. Example: 'https://www.doku.com'")
+	}
+	return nil
+}
+
+func validateCardData(cardData string) error {
+	if cardData == "" {
+		return errors.New("cardData cannot be null. Please provide cardData. Example: '5cg2G2719+jxU1RfcGmeCyQrLagUaAWJWWhLpmmb'")
 	}
 	return nil
 }
