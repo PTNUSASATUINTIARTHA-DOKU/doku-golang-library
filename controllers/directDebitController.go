@@ -27,6 +27,7 @@ type DirectDebitInterface interface {
 	DoRefund(refundRequestDTO refundModels.RefundRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, tokenB2B2C string, deviceId string, isProduction bool) (refundModels.RefundResponseDTO, error)
 	DoCheckStatus(checkStatusRequestDTO checkStatusModels.CheckStatusRequestDTO, secretKey string, clientId string, tokenB2B string, isProduction bool) (checkStatusModels.CheckStatusResponseDTO, error)
 	DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO registrationCardUnbindingModels.CardRegistrationUnbindingRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, isProduction bool) (registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO, error)
+	EncryptCbc(bankCardData cardRegistrationModels.BankCardDataDTO, secretKey string) (string, error)
 }
 
 var directDebitService services.DirectDebitService
@@ -169,4 +170,8 @@ func (dd *DirectDebitController) DoCardRegistrationUnbinding(cardRegistrationUnb
 	externalId := snapUtils.GenerateExternalId()
 	requestHeader := snapUtils.GenerateRequestHeaderDto("", signature, timestamp, clientId, externalId, "", ipAddress, tokenB2B, "")
 	return directDebitService.DoCardRegistrationUnbindingProcess(requestHeader, cardRegistrationUnbindingRequestDTO, isProduction)
+}
+
+func (dd *DirectDebitController) EncryptCbc(bankCardData cardRegistrationModels.BankCardDataDTO, secretKey string) (string, error) {
+	return directDebitService.EncryptCbc(bankCardData, secretKey)
 }
