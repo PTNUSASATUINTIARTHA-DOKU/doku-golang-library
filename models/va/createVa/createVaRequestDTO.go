@@ -318,25 +318,37 @@ func (dto *CreateVaRequestDto) validateExpiredDate() (bool, string) {
 func (dto *CreateVaRequestDto) ValidateSimulatorASPI() (bool, CreateVaResponseDto) {
 	var createVaResponseDto CreateVaResponseDto
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "1110"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "1110"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "1110")
+		return validVaNo
+	}() {
 		createVaResponseDto.ResponseCode = "2002500"
 		createVaResponseDto.ResponseMessage = "Success"
 		return true, createVaResponseDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "1111"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "1111"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "1111")
+		return validVaNo
+	}() {
 		createVaResponseDto.ResponseCode = "4042512"
 		createVaResponseDto.ResponseMessage = "Bill not found"
 		return true, createVaResponseDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "1112"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "1112"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "1112")
+		return validVaNo
+	}() {
 		createVaResponseDto.ResponseCode = "4042513"
 		createVaResponseDto.ResponseMessage = "Invalid Amount"
 		return true, createVaResponseDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "1114"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "1114"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "1114")
+		return validVaNo
+	}() {
 		var vaData VirtualAccountData
 		vaData.PartnerServiceId = "90341537"
 		vaData.CustomerNo = "00000000000000000000"
@@ -353,19 +365,28 @@ func (dto *CreateVaRequestDto) ValidateSimulatorASPI() (bool, CreateVaResponseDt
 		return true, createVaResponseDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "111"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "111"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "111")
+		return validVaNo
+	}() {
 		createVaResponseDto.ResponseCode = "4012701"
 		createVaResponseDto.ResponseMessage = "Access Token Invalid (B2B)"
 		return true, createVaResponseDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "112"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "112"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "112")
+		return validVaNo
+	}() {
 		createVaResponseDto.ResponseCode = "4012700"
 		createVaResponseDto.ResponseMessage = "Unauthorized . Signature Not Match"
 		return true, createVaResponseDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "113"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "113"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "113")
+		return validVaNo
+	}() {
 		var vaData VirtualAccountData
 		vaData.CustomerNo = "00000000000000000000"
 		vaData.VirtualAccountNo = "0000000000000000000000000000"
@@ -381,7 +402,10 @@ func (dto *CreateVaRequestDto) ValidateSimulatorASPI() (bool, CreateVaResponseDt
 		return true, createVaResponseDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "114"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "114"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "114")
+		return validVaNo
+	}() {
 		var vaData VirtualAccountData
 		vaData.CustomerNo = "00000000000000000000"
 		vaData.VirtualAccountNo = "0000000000000000000000000000"
@@ -397,7 +421,10 @@ func (dto *CreateVaRequestDto) ValidateSimulatorASPI() (bool, CreateVaResponseDt
 		return true, createVaResponseDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "115"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "115"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "115")
+		return validVaNo
+	}() {
 		createVaResponseDto.ResponseCode = "4092700"
 		createVaResponseDto.ResponseMessage = "Conflict"
 		return true, createVaResponseDto

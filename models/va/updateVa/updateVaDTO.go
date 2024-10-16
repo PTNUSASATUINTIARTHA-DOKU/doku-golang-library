@@ -315,31 +315,46 @@ func (dto *UpdateVaDTO) validateExpiredDate() (bool, string) {
 func (dto *UpdateVaDTO) ValidateSimulatorASPI() (bool, UpdateVaResponseDTO) {
 	var updateVaResponseDto UpdateVaResponseDTO
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "1115"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "1115"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "1115")
+		return validVaNo
+	}() {
 		updateVaResponseDto.ResponseCode = "2002800"
 		updateVaResponseDto.ResponseMessage = "Successful"
 		return true, updateVaResponseDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "1116"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "1116"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "1116")
+		return validVaNo
+	}() {
 		updateVaResponseDto.ResponseCode = "2002900"
 		updateVaResponseDto.ResponseMessage = "Successful"
 		return true, updateVaResponseDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "111"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "111"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "111")
+		return validVaNo
+	}() {
 		updateVaResponseDto.ResponseCode = "4012701"
 		updateVaResponseDto.ResponseMessage = "Access Token Invalid (B2B)"
 		return true, updateVaResponseDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "112"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "112"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "112")
+		return validVaNo
+	}() {
 		updateVaResponseDto.ResponseCode = "4012700"
 		updateVaResponseDto.ResponseMessage = "Unauthorized . Signature Not Match"
 		return true, updateVaResponseDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "113"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "113"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "113")
+		return validVaNo
+	}() {
 		var vaData UpdateVaDTO
 		vaData.CustomerNo = "00000000000000000000"
 		vaData.VirtualAccountNo = "0000000000000000000000000000"
@@ -355,7 +370,10 @@ func (dto *UpdateVaDTO) ValidateSimulatorASPI() (bool, UpdateVaResponseDTO) {
 		return true, updateVaResponseDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "114"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "114"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "114")
+		return validVaNo
+	}() {
 		var vaData UpdateVaDTO
 		vaData.CustomerNo = "00000000000000000000"
 		vaData.VirtualAccountNo = "0000000000000000000000000000"
@@ -371,7 +389,10 @@ func (dto *UpdateVaDTO) ValidateSimulatorASPI() (bool, UpdateVaResponseDTO) {
 		return true, updateVaResponseDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "115"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "115"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "115")
+		return validVaNo
+	}() {
 		updateVaResponseDto.ResponseCode = "4092700"
 		updateVaResponseDto.ResponseMessage = "Conflict"
 		return true, updateVaResponseDto

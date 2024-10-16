@@ -105,25 +105,37 @@ func (dto *DeleteVaRequestDto) validateChannel() (bool, string) {
 func (dto *DeleteVaRequestDto) ValidateSimulatorASPI() (bool, DeleteVaResponseDto) {
 	var deleteVaResponseDto DeleteVaResponseDto
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "1118"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "1118"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "1118")
+		return validVaNo
+	}() {
 		deleteVaResponseDto.ResponseCode = "2003100"
 		deleteVaResponseDto.ResponseMessage = "Successful"
 		return true, deleteVaResponseDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "111"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "111"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "111")
+		return validVaNo
+	}() {
 		deleteVaResponseDto.ResponseCode = "4012701"
 		deleteVaResponseDto.ResponseMessage = "Access Token Invalid (B2B)"
 		return true, deleteVaResponseDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "112"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "112"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "112")
+		return validVaNo
+	}() {
 		deleteVaResponseDto.ResponseCode = "4012700"
 		deleteVaResponseDto.ResponseMessage = "Unauthorized . Signature Not Match"
 		return true, deleteVaResponseDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "113"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "113"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "113")
+		return validVaNo
+	}() {
 		var vaData DeleteVaResponseVirtualAccountData
 		vaData.PartnerServiceId = "90341537"
 		vaData.CustomerNo = "00000000000000000000"
@@ -136,7 +148,10 @@ func (dto *DeleteVaRequestDto) ValidateSimulatorASPI() (bool, DeleteVaResponseDt
 		return true, deleteVaResponseDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "114"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "114"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "114")
+		return validVaNo
+	}() {
 		var vaData DeleteVaResponseVirtualAccountData
 		vaData.PartnerServiceId = "90341537"
 		vaData.CustomerNo = "00000000000000000000"
@@ -149,7 +164,10 @@ func (dto *DeleteVaRequestDto) ValidateSimulatorASPI() (bool, DeleteVaResponseDt
 		return true, deleteVaResponseDto
 	}
 
-	if _, valid := strings.CutPrefix(dto.TrxId, "115"); valid {
+	if _, validTrxId := strings.CutPrefix(dto.TrxId, "115"); validTrxId || func() bool {
+		_, validVaNo := strings.CutPrefix(dto.VirtualAccountNo, "115")
+		return validVaNo
+	}() {
 		deleteVaResponseDto.ResponseCode = "4092700"
 		deleteVaResponseDto.ResponseMessage = "Conflict"
 		return true, deleteVaResponseDto
