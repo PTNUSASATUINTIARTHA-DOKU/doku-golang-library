@@ -7,7 +7,7 @@ import (
 )
 
 type CardRegistrationRequestDTO struct {
-	CardData       string                                   `json:"cardData"`
+	CardData       interface{}                              `json:"cardData"`
 	CustIdMerchant string                                   `json:"custIdMerchant"`
 	PhoneNo        string                                   `json:"phoneNo"`
 	AdditionalInfo CardRegistrationAdditionalInfoRequestDTO `json:"additionalInfo"`
@@ -39,7 +39,7 @@ func (cr *CardRegistrationRequestDTO) ValidateCardRegistrationRequest() error {
 		return err
 	}
 
-	if err := validateCardData(cr.CardData); err != nil {
+	if err := cr.validateCardData(); err != nil {
 		return err
 	}
 
@@ -66,9 +66,23 @@ func (cr *CardRegistrationRequestDTO) validateAdditionalInfo() error {
 	return nil
 }
 
-func validateCardData(cardData string) error {
-	if cardData == "" {
-		return errors.New("cardData cannot be null. Please provide cardData. Example: '5cg2G2719+jxU1RfcGmeCyQrLagUaAWJWWhLpmmb'")
+func (cr *CardRegistrationRequestDTO) validateCardData() error {
+	if cr.CardData == nil {
+		return errors.New("cardData cannot be null or empty")
 	}
+
+	switch cardData := cr.CardData.(type) {
+	case string:
+		if cardData == "" {
+			return errors.New("cardData is an empty string")
+		}
+	case BankCardDataDTO:
+		if cardData.BankCardNo == "" || cardData.BankCardType == "" || cardData.ExpiryDate == "" {
+			return errors.New("bank card data fields cannot be empty")
+		}
+	default:
+		return errors.New("cardData is of an unsupported type")
+	}
+
 	return nil
 }

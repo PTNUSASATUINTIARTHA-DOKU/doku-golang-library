@@ -106,6 +106,18 @@ func (dd *DirectDebitController) DoPaymentJumpApp(paymentJumpAppRequestDTO jumpA
 
 func (dd *DirectDebitController) DoCardRegistration(cardRegistrationRequestDTO cardRegistrationModels.CardRegistrationRequestDTO, secretKey string, clientId string, channelId string, tokenB2B string, isProduction bool) (cardRegistrationModels.CardRegistrationResponseDTO, error) {
 	url := commons.DIRECT_DEBIT_CARD_REGISTRATION
+	bankCardData, ok := cardRegistrationRequestDTO.CardData.(cardRegistrationModels.BankCardDataDTO)
+	if !ok {
+		return cardRegistrationModels.CardRegistrationResponseDTO{}, fmt.Errorf("cardData is not of type BankCardDataDTO")
+	}
+
+	encryptedCardData, err := dd.EncryptCbc(bankCardData, secretKey)
+	if err != nil {
+		return cardRegistrationModels.CardRegistrationResponseDTO{}, fmt.Errorf("error encrypting card data: %w", err)
+	}
+
+	cardRegistrationRequestDTO.CardData = encryptedCardData
+
 	minifiedRequestBody, err := json.Marshal(cardRegistrationRequestDTO)
 	if err != nil {
 		return cardRegistrationModels.CardRegistrationResponseDTO{}, fmt.Errorf("error marshalling request body: %w", err)
