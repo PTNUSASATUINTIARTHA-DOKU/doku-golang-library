@@ -27,7 +27,7 @@ type DirectDebitInterface interface {
 	DoRefund(refundRequestDTO refundModels.RefundRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, tokenB2B2C string, deviceId string, isProduction bool) (refundModels.RefundResponseDTO, error)
 	DoCheckStatus(checkStatusRequestDTO checkStatusModels.CheckStatusRequestDTO, secretKey string, clientId string, tokenB2B string, isProduction bool) (checkStatusModels.CheckStatusResponseDTO, error)
 	DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO registrationCardUnbindingModels.CardRegistrationUnbindingRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, isProduction bool) (registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO, error)
-	EncryptCbc(bankCardData cardRegistrationModels.BankCardDataDTO, secretKey string) (string, error)
+	EncryptCard(bankCardData cardRegistrationModels.BankCardDataDTO, secretKey string) (string, error)
 }
 
 var directDebitService services.DirectDebitService
@@ -111,7 +111,7 @@ func (dd *DirectDebitController) DoCardRegistration(cardRegistrationRequestDTO c
 		return cardRegistrationModels.CardRegistrationResponseDTO{}, fmt.Errorf("cardData is not of type BankCardDataDTO")
 	}
 
-	encryptedCardData, err := dd.EncryptCbc(bankCardData, secretKey)
+	encryptedCardData, err := dd.EncryptCard(bankCardData, secretKey)
 	if err != nil {
 		return cardRegistrationModels.CardRegistrationResponseDTO{}, fmt.Errorf("error encrypting card data: %w", err)
 	}
@@ -184,6 +184,6 @@ func (dd *DirectDebitController) DoCardRegistrationUnbinding(cardRegistrationUnb
 	return directDebitService.DoCardRegistrationUnbindingProcess(requestHeader, cardRegistrationUnbindingRequestDTO, isProduction)
 }
 
-func (dd *DirectDebitController) EncryptCbc(bankCardData cardRegistrationModels.BankCardDataDTO, secretKey string) (string, error) {
-	return directDebitService.EncryptCbc(bankCardData, secretKey)
+func (dd *DirectDebitController) EncryptCard(bankCardData cardRegistrationModels.BankCardDataDTO, secretKey string) (string, error) {
+	return directDebitService.EncryptCard(bankCardData, secretKey)
 }

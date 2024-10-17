@@ -461,7 +461,7 @@ func (dd *DirectDebitService) DoCardRegistrationUnbindingProcess(requestHeaderDT
 	return cardRegistrationUnbindingResponse, nil
 }
 
-func (dd *DirectDebitService) EncryptCbc(bankCardData cardRegistrationModels.BankCardDataDTO, secretKey string) (string, error) {
+func (dd *DirectDebitService) EncryptCard(bankCardData cardRegistrationModels.BankCardDataDTO, secretKey string) (string, error) {
 	secretKey = getSecretKey(secretKey)
 	bankCardDataString, err := json.Marshal(bankCardData)
 	if err != nil {
