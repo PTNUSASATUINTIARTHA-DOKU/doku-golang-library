@@ -2,10 +2,15 @@ package services
 
 import (
 	"bytes"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons"
@@ -454,4 +459,48 @@ func (dd *DirectDebitService) DoCardRegistrationUnbindingProcess(requestHeaderDT
 		return registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO{}, fmt.Errorf("error unmarshaling response JSON: %w", err)
 	}
 	return cardRegistrationUnbindingResponse, nil
+}
+
+func (dd *DirectDebitService) EncryptCard(bankCardData cardRegistrationModels.BankCardDataDTO, secretKey string) (string, error) {
+	secretKey = getSecretKey(secretKey)
+	bankCardDataString, err := json.Marshal(bankCardData)
+	if err != nil {
+		return "", err
+	}
+	block, err := aes.NewCipher([]byte(secretKey))
+	if err != nil {
+		return "", err
+	}
+
+	iv := make([]byte, aes.BlockSize)
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		return "", err
+	}
+
+	paddedInput := padPKCS5([]byte(bankCardDataString), aes.BlockSize)
+
+	ciphertext := make([]byte, len(paddedInput))
+	mode := cipher.NewCBCEncrypter(block, iv)
+	mode.CryptBlocks(ciphertext, paddedInput)
+
+	cipherTextBase64 := base64.StdEncoding.EncodeToString(ciphertext)
+	ivBase64 := base64.StdEncoding.EncodeToString(iv)
+
+	return fmt.Sprintf("%s|%s", cipherTextBase64, ivBase64), nil
+}
+
+func padPKCS5(input []byte, blockSize int) []byte {
+	padding := blockSize - len(input)%blockSize
+	padText := strings.Repeat(string(byte(padding)), padding)
+	return append(input, []byte(padText)...)
+}
+
+func getSecretKey(secretKey string) string {
+	if len(secretKey) > 16 {
+		return secretKey[:16]
+	} else if len(secretKey) < 16 {
+		return secretKey + strings.Repeat("-", 16-len(secretKey))
+	} else {
+		return secretKey
+	}
 }

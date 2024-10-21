@@ -27,6 +27,7 @@ type DirectDebitInterface interface {
 	DoRefund(refundRequestDTO refundModels.RefundRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, tokenB2B2C string, deviceId string, isProduction bool) (refundModels.RefundResponseDTO, error)
 	DoCheckStatus(checkStatusRequestDTO checkStatusModels.CheckStatusRequestDTO, secretKey string, clientId string, tokenB2B string, isProduction bool) (checkStatusModels.CheckStatusResponseDTO, error)
 	DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO registrationCardUnbindingModels.CardRegistrationUnbindingRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, isProduction bool) (registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO, error)
+	EncryptCard(bankCardData cardRegistrationModels.BankCardDataDTO, secretKey string) (string, error)
 }
 
 var directDebitService services.DirectDebitService
@@ -105,6 +106,18 @@ func (dd *DirectDebitController) DoPaymentJumpApp(paymentJumpAppRequestDTO jumpA
 
 func (dd *DirectDebitController) DoCardRegistration(cardRegistrationRequestDTO cardRegistrationModels.CardRegistrationRequestDTO, secretKey string, clientId string, channelId string, tokenB2B string, isProduction bool) (cardRegistrationModels.CardRegistrationResponseDTO, error) {
 	url := commons.DIRECT_DEBIT_CARD_REGISTRATION
+	bankCardData, ok := cardRegistrationRequestDTO.CardData.(cardRegistrationModels.BankCardDataDTO)
+	if !ok {
+		return cardRegistrationModels.CardRegistrationResponseDTO{}, fmt.Errorf("cardData is not of type BankCardDataDTO")
+	}
+
+	encryptedCardData, err := dd.EncryptCard(bankCardData, secretKey)
+	if err != nil {
+		return cardRegistrationModels.CardRegistrationResponseDTO{}, fmt.Errorf("error encrypting card data: %w", err)
+	}
+
+	cardRegistrationRequestDTO.CardData = encryptedCardData
+
 	minifiedRequestBody, err := json.Marshal(cardRegistrationRequestDTO)
 	if err != nil {
 		return cardRegistrationModels.CardRegistrationResponseDTO{}, fmt.Errorf("error marshalling request body: %w", err)
@@ -169,4 +182,8 @@ func (dd *DirectDebitController) DoCardRegistrationUnbinding(cardRegistrationUnb
 	externalId := snapUtils.GenerateExternalId()
 	requestHeader := snapUtils.GenerateRequestHeaderDto("", signature, timestamp, clientId, externalId, "", ipAddress, tokenB2B, "")
 	return directDebitService.DoCardRegistrationUnbindingProcess(requestHeader, cardRegistrationUnbindingRequestDTO, isProduction)
+}
+
+func (dd *DirectDebitController) EncryptCard(bankCardData cardRegistrationModels.BankCardDataDTO, secretKey string) (string, error) {
+	return directDebitService.EncryptCard(bankCardData, secretKey)
 }
