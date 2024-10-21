@@ -42,17 +42,31 @@ func (ts TokenServices) GenerateTimestamp() string {
 
 func (ts TokenServices) CreateSignature(privateKeyPem string, clientID string, xTimestamp string) (string, error) {
 	block, _ := pem.Decode([]byte(privateKeyPem))
-	if block == nil || block.Type != "PRIVATE KEY" {
+	if block == nil {
 		return "", errors.New("failed to decode PEM block containing private key")
 	}
-	privateKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-	if err != nil {
-		return "", err
-	}
 
-	rsaPrivateKey, ok := privateKey.(*rsa.PrivateKey)
-	if !ok {
-		return "", errors.New("not an RSA private key")
+	var rsaPrivateKey *rsa.PrivateKey
+	var err error
+
+	if block.Type == "PRIVATE KEY" {
+		privateKey, parseErr := x509.ParsePKCS8PrivateKey(block.Bytes)
+		if parseErr != nil {
+			return "", parseErr
+		}
+
+		var ok bool
+		rsaPrivateKey, ok = privateKey.(*rsa.PrivateKey)
+		if !ok {
+			return "", errors.New("not an RSA private key")
+		}
+	} else if block.Type == "RSA PRIVATE KEY" {
+		rsaPrivateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		return "", errors.New("unsupported private key type")
 	}
 
 	stringToSign := clientID + "|" + xTimestamp
@@ -62,7 +76,7 @@ func (ts TokenServices) CreateSignature(privateKeyPem string, clientID string, x
 		return "", err
 	}
 
-	return base64.StdEncoding.EncodeToString(signature), err
+	return base64.StdEncoding.EncodeToString(signature), nil
 }
 
 func (ts TokenServices) CompareSignatures(clientId, timestamp, signature, publicKeyDOKU string) (bool, error) {
