@@ -116,9 +116,13 @@ func (dto *RefundRequestDTO) validatePartnerRefundNo() error {
 		if len(value) > 64 {
 			return errors.New("partnerRefundNo must be 64 characters or fewer. Ensure that partnerRefundNo is no longer than 64 characters. Example: 'INV-REF-001'")
 		}
-	} else if channel == "DIRECT_DEBIT_CIMB_SNAP" || channel == "DIRECT_DEBIT_BRI_SNAP" || channel == "DIRECT_DEBIT_ALLO_SNAP" {
+	} else if channel == "DIRECT_DEBIT_CIMB_SNAP" || channel == "DIRECT_DEBIT_BRI_SNAP" {
 		if len(value) > 12 {
 			return errors.New("partnerRefundNo must be 12 characters or fewer. Ensure that partnerRefundNo is no longer than 12 characters. Example: 'INV-REF-001'")
+		}
+	} else if channel == "DIRECT_DEBIT_ALLO_SNAP" {
+		if len(value) < 32 || len(value) > 64 {
+			return errors.New("partnerRefundNo must be 64 characters and at least 32 characters. Ensure that partnerRefundNo is no longer than 64 characters and at least 32 characters. Example: 'INV-REF-001'")
 		}
 	}
 
