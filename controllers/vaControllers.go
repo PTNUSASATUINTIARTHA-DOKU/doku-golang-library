@@ -36,7 +36,7 @@ func (vc VaController) CreateVa(createVaRequestDto createVaModels.CreateVaReques
 	createVaRequestDto.Origin = createVaModels.Origin{
 		Product:       "SDK",
 		Source:        "Golang",
-		SourceVersion: "v1.0.0",
+		SourceVersion: "v1.0.9",
 		System:        "doku-golang-library",
 		ApiFormat:     "SNAP",
 	}
