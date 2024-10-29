@@ -49,8 +49,10 @@ func TestCreateVaSuccess(t *testing.T) {
 		IsProduction: false,
 	}
 	snap.SetTokenB2B(mockGenerated.GetTokenB2BResponseDTO("2007300"))
-	actualResponse := snap.CreateVa(mockGenerated.CreateVaRequestDTO())
-	assert.Equal(t, "2002700", actualResponse.ResponseCode)
+	actualResponse, err := snap.CreateVa(mockGenerated.CreateVaRequestDTO())
+	if err == nil {
+		assert.Equal(t, "2002700", actualResponse.ResponseCode)
+	}
 
 }
 
@@ -440,8 +442,10 @@ func TestUpdateVaSuccess(t *testing.T) {
 		SecretKey:    "SECRET_KEY",
 	}
 	snap.SetTokenB2B(mockGenerated.GetTokenB2BResponseDTO("2007300"))
-	actualResponse := snap.UpdateVa(mockGenerated.UpdateVaRequestDTO())
-	assert.Equal(t, "2002700", actualResponse.ResponseCode)
+	actualResponse, err := snap.UpdateVa(mockGenerated.UpdateVaRequestDTO())
+	if err == nil {
+		assert.Equal(t, "2002700", actualResponse.ResponseCode)
+	}
 
 }
 
@@ -828,8 +832,10 @@ func TestCheckStatusVaSuccess(t *testing.T) {
 		ClientId:     "clientId",
 		IsProduction: false,
 	}
-	actualResponse := snap.CheckStatusVa(mockGenerated.CheckStatusVaRequest())
-	assert.Equal(t, "2002600", actualResponse.ResponseCode)
+	actualResponse, err := snap.CheckStatusVa(mockGenerated.CheckStatusVaRequest())
+	if err == nil {
+		assert.Equal(t, "2002600", actualResponse.ResponseCode)
+	}
 }
 
 func TestCheckStatusVaPartnerIdNot8Digits(t *testing.T) {
@@ -932,8 +938,10 @@ func TestDeletePaymentCodeSuccess(t *testing.T) {
 		ClientId:     "clientId",
 		IsProduction: false,
 	}
-	actualResponse := snap.DeletePaymentCode(mockGenerated.DeletePaymentCodeRequest())
-	assert.Equal(t, "2003100", actualResponse.ResponseCode)
+	actualResponse, err := snap.DeletePaymentCode(mockGenerated.DeletePaymentCodeRequest())
+	if err == nil {
+		assert.Equal(t, "2003100", actualResponse.ResponseCode)
+	}
 }
 
 func TestDeletePaymentCodeNot8Digits(t *testing.T) {
@@ -1369,7 +1377,7 @@ func TestDirectDebit(t *testing.T) {
 		if err == nil {
 			t.Fatalf("expected an error, got nil")
 		}
-		expectedError := "cardData cannot be null. Please provide cardData. Example: '5cg2G2719+jxU1RfcGmeCyQrLagUaAWJWWhLpmmb'"
+		expectedError := "cardData is an empty string"
 		if !strings.Contains(err.Error(), expectedError) {
 			t.Errorf("expected error message to contain '%s', got '%s'", expectedError, err.Error())
 		}

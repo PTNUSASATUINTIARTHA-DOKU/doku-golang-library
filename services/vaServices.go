@@ -43,7 +43,7 @@ func (vs VaServices) CreateVa(
 	requestHeaderDto createVaModels.RequestHeaderDTO,
 	createVaRequestDto createVaModels.CreateVaRequestDto,
 	isProduction bool,
-) createVaModels.CreateVaResponseDto {
+) (createVaModels.CreateVaResponseDto, error) {
 
 	url := config.GetBaseUrl(isProduction) + commons.CREATE_VA
 
@@ -59,12 +59,12 @@ func (vs VaServices) CreateVa(
 
 	bodyRequest, err := json.Marshal(createVaRequestDto)
 	if err != nil {
-		fmt.Println("Error body response :", err)
+		return createVaModels.CreateVaResponseDto{}, fmt.Errorf("error body request: %w", err)
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(bodyRequest))
 	if err != nil {
-		fmt.Println("Error body request :", err)
+		return createVaModels.CreateVaResponseDto{}, fmt.Errorf("error body response: %w", err)
 	}
 
 	for key, value := range header {
@@ -76,7 +76,7 @@ func (vs VaServices) CreateVa(
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Error response :", err)
+		return createVaModels.CreateVaResponseDto{}, fmt.Errorf("error body response: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -84,14 +84,14 @@ func (vs VaServices) CreateVa(
 	fmt.Println("RESPONSE: ", string(respBody))
 	var createVaResponseDTO createVaModels.CreateVaResponseDto
 	if err := json.Unmarshal(respBody, &createVaResponseDTO); err != nil {
-		fmt.Println("error unmarshaling response JSON: ", err)
+		return createVaModels.CreateVaResponseDto{}, fmt.Errorf("error body response: %w", err)
 	}
 
-	return createVaResponseDTO
+	return createVaResponseDTO, nil
 
 }
 
-func (vs VaServices) DoUpdateVa(requestHeaderDTO createVaModels.RequestHeaderDTO, updateVaRequestDTO updateVaModels.UpdateVaDTO, isProduction bool) updateVaModels.UpdateVaResponseDTO {
+func (vs VaServices) DoUpdateVa(requestHeaderDTO createVaModels.RequestHeaderDTO, updateVaRequestDTO updateVaModels.UpdateVaDTO, isProduction bool) (updateVaModels.UpdateVaResponseDTO, error) {
 	url := config.GetBaseUrl(isProduction) + commons.UPDATE_VA
 
 	header := map[string]string{
@@ -106,12 +106,12 @@ func (vs VaServices) DoUpdateVa(requestHeaderDTO createVaModels.RequestHeaderDTO
 
 	bodyRequest, err := json.Marshal(updateVaRequestDTO)
 	if err != nil {
-		fmt.Println("Error body response :", err)
+		return updateVaModels.UpdateVaResponseDTO{}, fmt.Errorf("error body request : %w", err)
 	}
 
 	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(bodyRequest))
 	if err != nil {
-		fmt.Println("Error body request :", err)
+		return updateVaModels.UpdateVaResponseDTO{}, fmt.Errorf("error body response : %w", err)
 	}
 
 	for key, value := range header {
@@ -123,7 +123,7 @@ func (vs VaServices) DoUpdateVa(requestHeaderDTO createVaModels.RequestHeaderDTO
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Error response :", err)
+		return updateVaModels.UpdateVaResponseDTO{}, fmt.Errorf("error response : %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -131,13 +131,13 @@ func (vs VaServices) DoUpdateVa(requestHeaderDTO createVaModels.RequestHeaderDTO
 	fmt.Println("RESPONSE: ", string(respBody))
 	var updateVaResponseDTO updateVaModels.UpdateVaResponseDTO
 	if err := json.Unmarshal(respBody, &updateVaResponseDTO); err != nil {
-		fmt.Println("error unmarshaling response JSON: ", err)
+		return updateVaModels.UpdateVaResponseDTO{}, fmt.Errorf("error body response : %w", err)
 	}
 
-	return updateVaResponseDTO
+	return updateVaResponseDTO, nil
 }
 
-func (vs VaServices) DoCheckStatusVa(requestHeaderDTO createVaModels.RequestHeaderDTO, checkStatusVARequestDto checkVaModels.CheckStatusVARequestDto, isProduction bool) checkVaModels.CheckStatusVaResponseDto {
+func (vs VaServices) DoCheckStatusVa(requestHeaderDTO createVaModels.RequestHeaderDTO, checkStatusVARequestDto checkVaModels.CheckStatusVARequestDto, isProduction bool) (checkVaModels.CheckStatusVaResponseDto, error) {
 	url := config.GetBaseUrl(isProduction) + commons.CHECK_VA
 
 	header := map[string]string{
@@ -152,12 +152,12 @@ func (vs VaServices) DoCheckStatusVa(requestHeaderDTO createVaModels.RequestHead
 
 	bodyRequest, err := json.Marshal(checkStatusVARequestDto)
 	if err != nil {
-		fmt.Println("Error body response :", err)
+		return checkVaModels.CheckStatusVaResponseDto{}, fmt.Errorf("error body request : %w", err)
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(bodyRequest))
 	if err != nil {
-		fmt.Println("Error body request :", err)
+		return checkVaModels.CheckStatusVaResponseDto{}, fmt.Errorf("error body request : %w", err)
 	}
 
 	for key, value := range header {
@@ -169,7 +169,7 @@ func (vs VaServices) DoCheckStatusVa(requestHeaderDTO createVaModels.RequestHead
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Error response :", err)
+		return checkVaModels.CheckStatusVaResponseDto{}, fmt.Errorf("error response : %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -177,13 +177,13 @@ func (vs VaServices) DoCheckStatusVa(requestHeaderDTO createVaModels.RequestHead
 	fmt.Println("RESPONSE: ", string(respBody))
 	var checkStatusVaResponseDTO checkVaModels.CheckStatusVaResponseDto
 	if err := json.Unmarshal(respBody, &checkStatusVaResponseDTO); err != nil {
-		fmt.Println("error unmarshaling response JSON: ", err)
+		return checkVaModels.CheckStatusVaResponseDto{}, fmt.Errorf("error unmarshaling response JSON: %w", err)
 	}
 
-	return checkStatusVaResponseDTO
+	return checkStatusVaResponseDTO, nil
 }
 
-func (vs VaServices) DoDeletePaymentCode(requestHeaderDTO createVaModels.RequestHeaderDTO, deleteVaRequestDto deleteVaModels.DeleteVaRequestDto, isProduction bool) deleteVaModels.DeleteVaResponseDto {
+func (vs VaServices) DoDeletePaymentCode(requestHeaderDTO createVaModels.RequestHeaderDTO, deleteVaRequestDto deleteVaModels.DeleteVaRequestDto, isProduction bool) (deleteVaModels.DeleteVaResponseDto, error) {
 	url := config.GetBaseUrl(isProduction) + commons.DELETE_VA
 
 	header := map[string]string{
@@ -198,12 +198,12 @@ func (vs VaServices) DoDeletePaymentCode(requestHeaderDTO createVaModels.Request
 
 	bodyRequest, err := json.Marshal(deleteVaRequestDto)
 	if err != nil {
-		fmt.Println("Error body response :", err)
+		return deleteVaModels.DeleteVaResponseDto{}, fmt.Errorf("error body response : %w", err)
 	}
 
 	req, err := http.NewRequest("DELETE", url, bytes.NewBuffer(bodyRequest))
 	if err != nil {
-		fmt.Println("Error body request :", err)
+		return deleteVaModels.DeleteVaResponseDto{}, fmt.Errorf("error body request : %w", err)
 	}
 
 	for key, value := range header {
@@ -215,7 +215,7 @@ func (vs VaServices) DoDeletePaymentCode(requestHeaderDTO createVaModels.Request
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Error response :", err)
+		return deleteVaModels.DeleteVaResponseDto{}, fmt.Errorf("error response : %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -223,10 +223,10 @@ func (vs VaServices) DoDeletePaymentCode(requestHeaderDTO createVaModels.Request
 	fmt.Println("RESPONSE: ", string(respBody))
 	var deleteVaResponseDto deleteVaModels.DeleteVaResponseDto
 	if err := json.Unmarshal(respBody, &deleteVaResponseDto); err != nil {
-		fmt.Println("error unmarshaling response JSON: ", err)
+		return deleteVaModels.DeleteVaResponseDto{}, fmt.Errorf("error unmarshaling response JSON: ", err)
 	}
 
-	return deleteVaResponseDto
+	return deleteVaResponseDto, nil
 }
 
 func (vs VaServices) DirectInquiryResponseMapping(xmlData string) (inquiryVaModels.InquiryResponseBodyDTO, error) {
