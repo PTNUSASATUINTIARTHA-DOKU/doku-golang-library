@@ -66,24 +66,24 @@ func (m *MockController) DoGenerateRequestHeader(privateKey string, clientId str
 
 // VaController
 
-func (m *MockController) CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto, privateKey string, clientId string, tokenB2B string, isProduction bool) createVaModels.CreateVaResponseDto {
+func (m *MockController) CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto, privateKey string, clientId string, tokenB2B string, isProduction bool) (createVaModels.CreateVaResponseDto, error) {
 	args := m.Called(createVaRequestDto, privateKey, clientId, tokenB2B, isProduction)
-	return args.Get(0).(createVaModels.CreateVaResponseDto)
+	return args.Get(0).(createVaModels.CreateVaResponseDto), nil
 }
 
-func (m *MockController) DoUpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO, clientId string, tokenB2B string, secretKey string, isProduction bool) updateVaModels.UpdateVaResponseDTO {
+func (m *MockController) DoUpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO, clientId string, tokenB2B string, secretKey string, isProduction bool) (updateVaModels.UpdateVaResponseDTO, error) {
 	args := m.Called(updateVaRequestDTO, clientId, tokenB2B, secretKey, isProduction)
-	return args.Get(0).(updateVaModels.UpdateVaResponseDTO)
+	return args.Get(0).(updateVaModels.UpdateVaResponseDTO), nil
 }
 
-func (m *MockController) DoCheckStatusVa(checkStatusVARequestDto checkVaModels.CheckStatusVARequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) checkVaModels.CheckStatusVaResponseDto {
+func (m *MockController) DoCheckStatusVa(checkStatusVARequestDto checkVaModels.CheckStatusVARequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) (checkVaModels.CheckStatusVaResponseDto, error) {
 	args := m.Called(checkStatusVARequestDto, privateKey, clientId, tokenB2B, secretKey, isProduction)
-	return args.Get(0).(checkVaModels.CheckStatusVaResponseDto)
+	return args.Get(0).(checkVaModels.CheckStatusVaResponseDto), nil
 }
 
-func (m *MockController) DoDeletePaymentCode(deleteVaRequestDto deleteVaModels.DeleteVaRequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) deleteVaModels.DeleteVaResponseDto {
+func (m *MockController) DoDeletePaymentCode(deleteVaRequestDto deleteVaModels.DeleteVaRequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) (deleteVaModels.DeleteVaResponseDto, error) {
 	args := m.Called(deleteVaRequestDto, privateKey, clientId, tokenB2B, secretKey, isProduction)
-	return args.Get(0).(deleteVaModels.DeleteVaResponseDto)
+	return args.Get(0).(deleteVaModels.DeleteVaResponseDto), nil
 }
 
 func (m *MockController) DirectInquiryRequestMapping(headerRequest *http.Request, inquiryRequestBodyDto inquiryVaModels.InquiryRequestBodyDTO) (string, error) {
@@ -140,4 +140,8 @@ func (m *MockController) DoCheckStatus(checkStatusRequestDTO checkStatusModels.C
 func (m *MockController) DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO registrationCardUnbindingModels.CardRegistrationUnbindingRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, isProduction bool) (registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO, error) {
 	args := m.Called(cardRegistrationUnbindingRequestDTO, secretKey, clientId, ipAddress, tokenB2B, isProduction)
 	return args.Get(0).(registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO), nil
+}
+
+func (m *MockController) EncryptCard(bankCardData cardRegistrationModels.BankCardDataDTO, secretKey string) (string, error) {
+	return (""), nil
 }

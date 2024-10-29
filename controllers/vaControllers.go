@@ -20,17 +20,17 @@ var tokenServices services.TokenServices
 var snapUtils utils.SnapUtils
 
 type VaControllerInterface interface {
-	CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto, secretKey string, clientId string, tokenB2B string, isProduction bool) createVaModels.CreateVaResponseDto
-	DoUpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO, clientId string, tokenB2B string, secretKey string, isProduction bool) updateVaModels.UpdateVaResponseDTO
-	DoCheckStatusVa(checkStatusVARequestDto checkVaModels.CheckStatusVARequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) checkVaModels.CheckStatusVaResponseDto
-	DoDeletePaymentCode(deleteVaRequestDto deleteVaModels.DeleteVaRequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) deleteVaModels.DeleteVaResponseDto
+	CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto, secretKey string, clientId string, tokenB2B string, isProduction bool) (createVaModels.CreateVaResponseDto, error)
+	DoUpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO, clientId string, tokenB2B string, secretKey string, isProduction bool) (updateVaModels.UpdateVaResponseDTO, error)
+	DoCheckStatusVa(checkStatusVARequestDto checkVaModels.CheckStatusVARequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) (checkVaModels.CheckStatusVaResponseDto, error)
+	DoDeletePaymentCode(deleteVaRequestDto deleteVaModels.DeleteVaRequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) (deleteVaModels.DeleteVaResponseDto, error)
 	DirectInquiryRequestMapping(headerRequest *http.Request, inquiryRequestBodyDto inquiryVaModels.InquiryRequestBodyDTO) (string, error)
 	DirectInquiryResponseMapping(xmlData string) (inquiryVaModels.InquiryResponseBodyDTO, error)
 }
 
 type VaController struct{}
 
-func (vc VaController) CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto, secretKey string, clientId string, tokenB2B string, isProduction bool) createVaModels.CreateVaResponseDto {
+func (vc VaController) CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto, secretKey string, clientId string, tokenB2B string, isProduction bool) (createVaModels.CreateVaResponseDto, error) {
 	timestamp := tokenServices.GenerateTimestamp()
 	externalId := snapUtils.GenerateExternalId()
 	createVaRequestDto.Origin = createVaModels.Origin{
@@ -42,28 +42,28 @@ func (vc VaController) CreateVa(createVaRequestDto createVaModels.CreateVaReques
 	}
 	minifiedRequestBody, err := json.Marshal(createVaRequestDto)
 	if err != nil {
-		fmt.Println("Error marshalling request body:", err)
+		return createVaModels.CreateVaResponseDto{}, fmt.Errorf("error marshalling request body: %w", err)
 	}
 	endPointUrl := commons.CREATE_VA
 	httpMethod := "POST"
 	signature := tokenServices.GenerateSymetricSignature(httpMethod, endPointUrl, tokenB2B, minifiedRequestBody, timestamp, secretKey)
 	requestHeader := vaServices.GenerateRequestHeaderDto("H2H", signature, timestamp, clientId, externalId, tokenB2B)
 
-	response := vaServices.CreateVa(
+	response, err := vaServices.CreateVa(
 		requestHeader,
 		createVaRequestDto,
 		isProduction)
 
-	return response
+	return response, err
 }
 
-func (vc VaController) DoUpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO, clientId string, tokenB2B string, secretKey string, isProduction bool) updateVaModels.UpdateVaResponseDTO {
+func (vc VaController) DoUpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO, clientId string, tokenB2B string, secretKey string, isProduction bool) (updateVaModels.UpdateVaResponseDTO, error) {
 	timeStamp := tokenServices.GenerateTimestamp()
 	endPointUrl := commons.UPDATE_VA
 	httpMethod := "PUT"
 	minifiedRequestBody, err := json.Marshal(updateVaRequestDTO)
 	if err != nil {
-		fmt.Println("Error marshalling request body:", err)
+		return updateVaModels.UpdateVaResponseDTO{}, fmt.Errorf("error marshalling request body: %w", err)
 	}
 	signature := tokenServices.GenerateSymetricSignature(httpMethod, endPointUrl, tokenB2B, minifiedRequestBody, timeStamp, secretKey)
 	externalId := snapUtils.GenerateExternalId()
@@ -71,13 +71,13 @@ func (vc VaController) DoUpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO,
 	return vaServices.DoUpdateVa(header, updateVaRequestDTO, isProduction)
 }
 
-func (vc VaController) DoCheckStatusVa(checkStatusVARequestDto checkVaModels.CheckStatusVARequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) checkVaModels.CheckStatusVaResponseDto {
+func (vc VaController) DoCheckStatusVa(checkStatusVARequestDto checkVaModels.CheckStatusVARequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) (checkVaModels.CheckStatusVaResponseDto, error) {
 	timeStamp := tokenServices.GenerateTimestamp()
 	endPointUrl := commons.CHECK_VA
 	httpMethod := "POST"
 	minifiedRequestBody, err := json.Marshal(checkStatusVARequestDto)
 	if err != nil {
-		fmt.Println("Error marshalling request body:", err)
+		return checkVaModels.CheckStatusVaResponseDto{}, fmt.Errorf("error marshalling request body: %w", err)
 	}
 	signature := tokenServices.GenerateSymetricSignature(httpMethod, endPointUrl, tokenB2B, minifiedRequestBody, timeStamp, secretKey)
 	externalId := snapUtils.GenerateExternalId()
@@ -85,13 +85,13 @@ func (vc VaController) DoCheckStatusVa(checkStatusVARequestDto checkVaModels.Che
 	return vaServices.DoCheckStatusVa(header, checkStatusVARequestDto, isProduction)
 }
 
-func (vc VaController) DoDeletePaymentCode(deleteVaRequestDto deleteVaModels.DeleteVaRequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) deleteVaModels.DeleteVaResponseDto {
+func (vc VaController) DoDeletePaymentCode(deleteVaRequestDto deleteVaModels.DeleteVaRequestDto, privateKey string, clientId string, tokenB2B string, secretKey string, isProduction bool) (deleteVaModels.DeleteVaResponseDto, error) {
 	timeStamp := tokenServices.GenerateTimestamp()
 	endPointUrl := commons.DELETE_VA
 	httpMethod := "DELETE"
 	minifiedRequestBody, err := json.Marshal(deleteVaRequestDto)
 	if err != nil {
-		fmt.Println("Error marshalling request body:", err)
+		return deleteVaModels.DeleteVaResponseDto{}, fmt.Errorf("error marshalling request body: %w", err)
 	}
 	signature := tokenServices.GenerateSymetricSignature(httpMethod, endPointUrl, tokenB2B, minifiedRequestBody, timeStamp, secretKey)
 	externalId := snapUtils.GenerateExternalId()

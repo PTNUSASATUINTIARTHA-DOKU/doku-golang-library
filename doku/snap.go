@@ -82,16 +82,19 @@ func (snap *Snap) SetTokenB2B2C(tokenB2B2CResponseDTO tokenVaModels.TokenB2B2CRe
 	snap.tokenB2B2CGeneratedTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
 }
 
-func (snap *Snap) CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto) createVaModels.CreateVaResponseDto {
+func (snap *Snap) CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto) (createVaModels.CreateVaResponseDto, error) {
 
 	if isSimulator, response := createVaRequestDto.ValidateSimulatorASPI(); isSimulator && !snap.IsProduction {
 		resp, _ := json.Marshal(response)
 		log.Println("RESPONSE: ", string(resp))
-		return response
+		return response, nil
 	}
 
 	if err := createVaRequestDto.ValidateVaRequestDto(); err != nil {
-		log.Println(err)
+		return createVaModels.CreateVaResponseDto{
+			ResponseCode:    "500700",
+			ResponseMessage: err.Error(),
+		}, err
 	}
 
 	isTokenInvalid := TokenController.IsTokenInvalid(
@@ -102,26 +105,36 @@ func (snap *Snap) CreateVa(createVaRequestDto createVaModels.CreateVaRequestDto)
 	if isTokenInvalid {
 		snap.GetTokenB2B()
 	}
-	createVaResponse := VaController.CreateVa(
+	createVaResponse, err := VaController.CreateVa(
 		createVaRequestDto,
 		snap.SecretKey,
 		snap.ClientId,
 		snap.tokenB2B,
 		snap.IsProduction,
 	)
-	return createVaResponse
+
+	if err != nil {
+		return createVaModels.CreateVaResponseDto{
+			ResponseCode:    "500700",
+			ResponseMessage: err.Error(),
+		}, err
+	}
+	return createVaResponse, nil
 }
 
-func (snap *Snap) UpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO) updateVaModels.UpdateVaResponseDTO {
+func (snap *Snap) UpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO) (updateVaModels.UpdateVaResponseDTO, error) {
 
 	if isSimulator, response := updateVaRequestDTO.ValidateSimulatorASPI(); isSimulator && !snap.IsProduction {
 		resp, _ := json.Marshal(response)
 		log.Println("RESPONSE: ", string(resp))
-		return response
+		return response, nil
 	}
 
 	if err := updateVaRequestDTO.ValidateUpdateVaRequestDTO(); err != nil {
-		log.Println(err)
+		return updateVaModels.UpdateVaResponseDTO{
+			ResponseCode:    "500700",
+			ResponseMessage: err.Error(),
+		}, err
 	}
 
 	isTokenInvalid := TokenController.IsTokenInvalid(
@@ -132,16 +145,23 @@ func (snap *Snap) UpdateVa(updateVaRequestDTO updateVaModels.UpdateVaDTO) update
 	if isTokenInvalid {
 		snap.GetTokenB2B()
 	}
-	updateVaResponse := VaController.DoUpdateVa(updateVaRequestDTO, snap.ClientId, snap.tokenB2B, snap.SecretKey, snap.IsProduction)
+	updateVaResponse, err := VaController.DoUpdateVa(updateVaRequestDTO, snap.ClientId, snap.tokenB2B, snap.SecretKey, snap.IsProduction)
 
-	return updateVaResponse
+	if err != nil {
+		return updateVaModels.UpdateVaResponseDTO{
+			ResponseCode:    "500700",
+			ResponseMessage: err.Error(),
+		}, err
+	}
+
+	return updateVaResponse, nil
 }
 
-func (snap *Snap) CheckStatusVa(checkStatusVaRequestDto checkVaModels.CheckStatusVARequestDto) checkVaModels.CheckStatusVaResponseDto {
+func (snap *Snap) CheckStatusVa(checkStatusVaRequestDto checkVaModels.CheckStatusVARequestDto) (checkVaModels.CheckStatusVaResponseDto, error) {
 	if isSimulator, response := checkStatusVaRequestDto.ValidateSimulatorASPI(); isSimulator && !snap.IsProduction {
 		resp, _ := json.Marshal(response)
 		log.Println("RESPONSE: ", string(resp))
-		return response
+		return response, nil
 	}
 	checkStatusVaRequestDto.ValidateCheckStatusVaRequestDto()
 	isTokenInvalid := TokenController.IsTokenInvalid(
@@ -152,17 +172,22 @@ func (snap *Snap) CheckStatusVa(checkStatusVaRequestDto checkVaModels.CheckStatu
 	if isTokenInvalid {
 		snap.GetTokenB2B()
 	}
-	checkStatusVaResponseDTO := VaController.DoCheckStatusVa(checkStatusVaRequestDto, snap.PrivateKey, snap.ClientId, snap.tokenB2B, snap.SecretKey, snap.IsProduction)
-
-	return checkStatusVaResponseDTO
+	checkStatusVaResponseDTO, err := VaController.DoCheckStatusVa(checkStatusVaRequestDto, snap.PrivateKey, snap.ClientId, snap.tokenB2B, snap.SecretKey, snap.IsProduction)
+	if err != nil {
+		return checkVaModels.CheckStatusVaResponseDto{
+			ResponseCode:    "500700",
+			ResponseMessage: err.Error(),
+		}, err
+	}
+	return checkStatusVaResponseDTO, nil
 }
 
-func (snap *Snap) DeletePaymentCode(deleteVaRequestDto deleteVaModels.DeleteVaRequestDto) deleteVaModels.DeleteVaResponseDto {
+func (snap *Snap) DeletePaymentCode(deleteVaRequestDto deleteVaModels.DeleteVaRequestDto) (deleteVaModels.DeleteVaResponseDto, error) {
 
 	if isSimulator, response := deleteVaRequestDto.ValidateSimulatorASPI(); isSimulator && !snap.IsProduction {
 		resp, _ := json.Marshal(response)
 		log.Println("RESPONSE: ", string(resp))
-		return response
+		return response, nil
 	}
 	deleteVaRequestDto.ValidateDeleteVaRequest()
 	isTokenInvalid := TokenController.IsTokenInvalid(
@@ -173,9 +198,14 @@ func (snap *Snap) DeletePaymentCode(deleteVaRequestDto deleteVaModels.DeleteVaRe
 	if isTokenInvalid {
 		snap.GetTokenB2B()
 	}
-	deleteVaResponseDto := VaController.DoDeletePaymentCode(deleteVaRequestDto, snap.PrivateKey, snap.ClientId, snap.tokenB2B, snap.SecretKey, snap.IsProduction)
-
-	return deleteVaResponseDto
+	deleteVaResponseDto, err := VaController.DoDeletePaymentCode(deleteVaRequestDto, snap.PrivateKey, snap.ClientId, snap.tokenB2B, snap.SecretKey, snap.IsProduction)
+	if err != nil {
+		return deleteVaModels.DeleteVaResponseDto{
+			ResponseCode:    "500700",
+			ResponseMessage: err.Error(),
+		}, err
+	}
+	return deleteVaResponseDto, nil
 }
 
 func (snap *Snap) generateTokenB2B(isSignatureValid bool) notificationTokenModels.NotificationTokenDTO {
