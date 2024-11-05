@@ -1,6 +1,7 @@
 package cardregistration
 
 import (
+	"encoding/json"
 	"errors"
 
 	directDebitChannel "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons/utils/directdebit"
@@ -78,6 +79,21 @@ func (cr *CardRegistrationRequestDTO) validateCardData() error {
 		}
 	case BankCardDataDTO:
 		if cardData.BankCardNo == "" || cardData.BankCardType == "" || cardData.ExpiryDate == "" {
+			return errors.New("bank card data fields cannot be empty")
+		}
+	case map[string]interface{}:
+		var bankCardData BankCardDataDTO
+		cardDataJSON, err := json.Marshal(cardData)
+		if err != nil {
+			return errors.New("unable to marshal cardData")
+		}
+
+		err = json.Unmarshal(cardDataJSON, &bankCardData)
+		if err != nil {
+			return errors.New("cardData is of an unsupported type or has invalid fields")
+		}
+
+		if bankCardData.BankCardNo == "" || bankCardData.BankCardType == "" || bankCardData.ExpiryDate == "" {
 			return errors.New("bank card data fields cannot be empty")
 		}
 	default:
