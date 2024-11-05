@@ -106,6 +106,19 @@ func (dd *DirectDebitController) DoPaymentJumpApp(paymentJumpAppRequestDTO jumpA
 
 func (dd *DirectDebitController) DoCardRegistration(cardRegistrationRequestDTO cardRegistrationModels.CardRegistrationRequestDTO, secretKey string, clientId string, channelId string, tokenB2B string, isProduction bool) (cardRegistrationModels.CardRegistrationResponseDTO, error) {
 	url := commons.DIRECT_DEBIT_CARD_REGISTRATION
+	if cardDataMap, ok := cardRegistrationRequestDTO.CardData.(map[string]interface{}); ok {
+		var bankCardData cardRegistrationModels.BankCardDataDTO
+		cardDataJSON, err := json.Marshal(cardDataMap)
+		if err != nil {
+			return cardRegistrationModels.CardRegistrationResponseDTO{}, fmt.Errorf("error marshalling cardData map to JSON: %w", err)
+		}
+		err = json.Unmarshal(cardDataJSON, &bankCardData)
+		if err != nil {
+			return cardRegistrationModels.CardRegistrationResponseDTO{}, fmt.Errorf("error unmarshalling JSON to BankCardDataDTO: %w", err)
+		}
+		cardRegistrationRequestDTO.CardData = bankCardData
+	}
+
 	bankCardData, ok := cardRegistrationRequestDTO.CardData.(cardRegistrationModels.BankCardDataDTO)
 	if !ok {
 		return cardRegistrationModels.CardRegistrationResponseDTO{}, fmt.Errorf("cardData is not of type BankCardDataDTO")
