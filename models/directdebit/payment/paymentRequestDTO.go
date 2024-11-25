@@ -24,12 +24,13 @@ type PayOptionDetailsDTO struct {
 }
 
 type PaymentAdditionalInfoDTO struct {
-	Channel           string         `json:"channel"`
-	Remarks           string         `json:"remarks,omitempty"` //allo, cimb
-	SuccessPaymentUrl string         `json:"successPaymentUrl,omitempty"`
-	FailedPaymentUrl  string         `json:"failedPaymentUrl,omitempty"`
-	LineItems         []LineItemsDTO `json:"lineItems,omitempty"`   //allo
-	PaymentType       string         `json:"paymentType,omitempty"` //bri, ovo
+	Channel           string                `json:"channel"`
+	Remarks           string                `json:"remarks,omitempty"` //allo, cimb
+	SuccessPaymentUrl string                `json:"successPaymentUrl,omitempty"`
+	FailedPaymentUrl  string                `json:"failedPaymentUrl,omitempty"`
+	LineItems         []LineItemsDTO        `json:"lineItems,omitempty"`   //allo
+	PaymentType       string                `json:"paymentType,omitempty"` //bri, ovo
+	Origin            createVaModels.Origin `json:"origin"`
 }
 
 type LineItemsDTO struct {

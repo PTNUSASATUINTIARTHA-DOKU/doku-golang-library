@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	directDebitChannel "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons/utils/directdebit"
+	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 )
 
 type AccountBindingRequestDTO struct {
@@ -13,19 +14,20 @@ type AccountBindingRequestDTO struct {
 }
 
 type AccountBindingAdditionalInfoRequestDto struct {
-	Channel                string `json:"channel"`
-	CustIdMerchant         string `json:"custIdMerchant"`
-	CustomerName           string `json:"customerName"`
-	Email                  string `json:"email"`
-	IdCard                 string `json:"idCard"`
-	Country                string `json:"country"`
-	Address                string `json:"address"`
-	DateOfBirth            string `json:"dateOfBirth"`
-	SuccessRegistrationUrl string `json:"successRegistrationUrl"`
-	FailedRegistrationUrl  string `json:"failedRegistrationUrl"`
-	DeviceModel            string `json:"deviceModel"`
-	OsType                 string `json:"osType"`
-	ChannelId              string `json:"channelId"`
+	Channel                string                `json:"channel"`
+	CustIdMerchant         string                `json:"custIdMerchant"`
+	CustomerName           string                `json:"customerName"`
+	Email                  string                `json:"email"`
+	IdCard                 string                `json:"idCard"`
+	Country                string                `json:"country"`
+	Address                string                `json:"address"`
+	DateOfBirth            string                `json:"dateOfBirth"`
+	SuccessRegistrationUrl string                `json:"successRegistrationUrl"`
+	FailedRegistrationUrl  string                `json:"failedRegistrationUrl"`
+	DeviceModel            string                `json:"deviceModel"`
+	OsType                 string                `json:"osType"`
+	ChannelId              string                `json:"channelId"`
+	Origin                 createVaModels.Origin `json:"origin"`
 }
 
 func (dto *AccountBindingRequestDTO) ValidateAccountBindingRequest() error {

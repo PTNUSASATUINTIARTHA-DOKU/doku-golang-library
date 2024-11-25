@@ -19,7 +19,8 @@ type RefundRequestDTO struct {
 }
 
 type RefundAdditionalInfoRequestDTO struct {
-	Channel string `json:"channel"`
+	Channel string                `json:"channel"`
+	Origin  createVaModels.Origin `json:"origin"`
 }
 
 func (dto *RefundRequestDTO) ValidateRefundRequest() error {

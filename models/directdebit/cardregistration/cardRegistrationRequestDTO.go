@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	directDebitChannel "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons/utils/directdebit"
+	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 )
 
 type CardRegistrationRequestDTO struct {
@@ -15,15 +16,16 @@ type CardRegistrationRequestDTO struct {
 }
 
 type CardRegistrationAdditionalInfoRequestDTO struct {
-	Channel                string `json:"channel"`
-	CustomerName           string `json:"customerName"`
-	Email                  string `json:"email"`
-	IdCard                 string `json:"idCard"`
-	Country                string `json:"country"`
-	Address                string `json:"address"`
-	DateOfBirth            string `json:"dateOfBirth"`
-	SuccessRegistrationUrl string `json:"successRegistrationUrl"`
-	FailedRegistrationUrl  string `json:"failedRegistrationUrl"`
+	Channel                string                `json:"channel"`
+	CustomerName           string                `json:"customerName"`
+	Email                  string                `json:"email"`
+	IdCard                 string                `json:"idCard"`
+	Country                string                `json:"country"`
+	Address                string                `json:"address"`
+	DateOfBirth            string                `json:"dateOfBirth"`
+	SuccessRegistrationUrl string                `json:"successRegistrationUrl"`
+	FailedRegistrationUrl  string                `json:"failedRegistrationUrl"`
+	Origin                 createVaModels.Origin `json:"origin"`
 }
 
 func (cr *CardRegistrationRequestDTO) ValidateCardRegistrationRequest() error {

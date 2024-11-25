@@ -24,9 +24,10 @@ type UrlParamDTO struct {
 }
 
 type PaymentJumpAppAdditionalInfoRequestDTO struct {
-	Channel    string `json:"channel"`
-	OrderTitle string `json:"orderTitle"`
-	Metadata   string `json:"metadata"`
+	Channel    string                `json:"channel"`
+	OrderTitle string                `json:"orderTitle"`
+	Metadata   string                `json:"metadata"`
+	Origin     createVaModels.Origin `json:"origin"`
 }
 
 func (dto *PaymentJumpAppRequestDTO) ValidatePaymentJumpAppRequest() error {
