@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	directDebitChannel "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons/utils/directdebit"
+	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 )
 
 type BalanceInquiryRequestDto struct {
@@ -11,7 +12,8 @@ type BalanceInquiryRequestDto struct {
 }
 
 type BalanceInquiryAdditionalInfoRequestDto struct {
-	Channel string `json:"channel"`
+	Channel string                `json:"channel"`
+	Origin  createVaModels.Origin `json:"origin"`
 }
 
 func (dto *BalanceInquiryRequestDto) ValidateBalanceInquiryRequest() error {

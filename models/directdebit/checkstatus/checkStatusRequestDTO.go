@@ -21,8 +21,9 @@ type CheckStatusRequestDTO struct {
 }
 
 type CheckStatusAdditionalInfoRequestDTO struct {
-	DeviceId string `json:"deviceId,omitempty"`
-	Channel  string `json:"channel,omitempty"`
+	DeviceId string                `json:"deviceId,omitempty"`
+	Channel  string                `json:"channel,omitempty"`
+	Origin   createVaModels.Origin `json:"origin"`
 }
 
 func (dto *CheckStatusRequestDTO) ValidateCheckStatusRequest() error {

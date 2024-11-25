@@ -14,6 +14,7 @@ import (
 	jumpAppModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/jumpapp"
 	paymentModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/payment"
 	refundModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/refund"
+	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/services"
 )
 
@@ -36,6 +37,13 @@ type DirectDebitController struct{}
 
 func (dd *DirectDebitController) DoAccountBinding(accountBindingRequest accountBindingModels.AccountBindingRequestDTO, secretKey string, clientId string, deviceId string, ipAddress string, tokenB2B string, isProduction bool) (accountBindingModels.AccountBindingResponseDTO, error) {
 	endPointUrl := commons.DIRECT_DEBIT_ACCOUNT_BINDING
+	accountBindingRequest.AdditionalInfo.Origin = createVaModels.Origin{
+		Product:       "SDK",
+		Source:        "Golang",
+		SourceVersion: commons.SDK_VERSION,
+		System:        "doku-golang-library",
+		ApiFormat:     "SNAP",
+	}
 	minifiedRequestBody, err := json.Marshal(accountBindingRequest)
 	if err != nil {
 		return accountBindingModels.AccountBindingResponseDTO{}, fmt.Errorf("error marshalling response JSON: %w", err)
@@ -50,6 +58,13 @@ func (dd *DirectDebitController) DoAccountBinding(accountBindingRequest accountB
 
 func (dd *DirectDebitController) DoBalanceInquiry(balanceInquiryRequestDto balanceInquiryModels.BalanceInquiryRequestDto, secretKey string, clientId string, ipAddress string, tokenB2B string, tokenB2B2C string, isProduction bool) (balanceInquiryModels.BalanceInquiryResponseDto, error) {
 	url := commons.DIRECT_DEBIT_BALANCE_INQUIRY_URL
+	balanceInquiryRequestDto.AdditionalInfo.Origin = createVaModels.Origin{
+		Product:       "SDK",
+		Source:        "Golang",
+		SourceVersion: commons.SDK_VERSION,
+		System:        "doku-golang-library",
+		ApiFormat:     "SNAP",
+	}
 	minifiedRequestBody, err := json.Marshal(balanceInquiryRequestDto)
 	if err != nil {
 		return balanceInquiryModels.BalanceInquiryResponseDto{}, fmt.Errorf("error marshalling response JSON: %w", err)
@@ -64,6 +79,13 @@ func (dd *DirectDebitController) DoBalanceInquiry(balanceInquiryRequestDto balan
 
 func (dd *DirectDebitController) DoPayment(paymentRequestDTO paymentModels.PaymentRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B2C string, tokenB2B string, isProduction bool) (paymentModels.PaymentResponseDTO, error) {
 	url := commons.DIRECT_DEBIT_PAYMENT
+	paymentRequestDTO.AdditionalInfo.Origin = createVaModels.Origin{
+		Product:       "SDK",
+		Source:        "Golang",
+		SourceVersion: commons.SDK_VERSION,
+		System:        "doku-golang-library",
+		ApiFormat:     "SNAP",
+	}
 	minifiedRequestBody, err := json.Marshal(paymentRequestDTO)
 	if err != nil {
 		return paymentModels.PaymentResponseDTO{}, fmt.Errorf("error marshalling response JSON: %w", err)
@@ -78,6 +100,13 @@ func (dd *DirectDebitController) DoPayment(paymentRequestDTO paymentModels.Payme
 
 func (dd *DirectDebitController) DoAccountUnbinding(accountUnbindingRequestDTO accountUnbindingModels.AccountUnbindingRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, isProduction bool) (accountUnbindingModels.AccountUnbindingResponseDTO, error) {
 	url := commons.DIRECT_DEBIT_ACCOUNT_UNBINDING
+	accountUnbindingRequestDTO.AdditionalInfo.Origin = createVaModels.Origin{
+		Product:       "SDK",
+		Source:        "Golang",
+		SourceVersion: commons.SDK_VERSION,
+		System:        "doku-golang-library",
+		ApiFormat:     "SNAP",
+	}
 	minifiedRequestBody, err := json.Marshal(accountUnbindingRequestDTO)
 	if err != nil {
 		return accountUnbindingModels.AccountUnbindingResponseDTO{}, fmt.Errorf("error marshalling request body: %w", err)
@@ -92,6 +121,13 @@ func (dd *DirectDebitController) DoAccountUnbinding(accountUnbindingRequestDTO a
 
 func (dd *DirectDebitController) DoPaymentJumpApp(paymentJumpAppRequestDTO jumpAppModels.PaymentJumpAppRequestDTO, secretKey string, clientId string, deviceId string, ipAddress string, tokenB2B string, isProduction bool) (jumpAppModels.PaymentJumpAppResponseDTO, error) {
 	url := commons.DIRECT_DEBIT_PAYMENT
+	paymentJumpAppRequestDTO.AdditionalInfo.Origin = createVaModels.Origin{
+		Product:       "SDK",
+		Source:        "Golang",
+		SourceVersion: commons.SDK_VERSION,
+		System:        "doku-golang-library",
+		ApiFormat:     "SNAP",
+	}
 	minifiedRequestBody, err := json.Marshal(paymentJumpAppRequestDTO)
 	if err != nil {
 		return jumpAppModels.PaymentJumpAppResponseDTO{}, fmt.Errorf("error marshalling request body: %w", err)
@@ -130,7 +166,13 @@ func (dd *DirectDebitController) DoCardRegistration(cardRegistrationRequestDTO c
 	}
 
 	cardRegistrationRequestDTO.CardData = encryptedCardData
-
+	cardRegistrationRequestDTO.AdditionalInfo.Origin = createVaModels.Origin{
+		Product:       "SDK",
+		Source:        "Golang",
+		SourceVersion: commons.SDK_VERSION,
+		System:        "doku-golang-library",
+		ApiFormat:     "SNAP",
+	}
 	minifiedRequestBody, err := json.Marshal(cardRegistrationRequestDTO)
 	if err != nil {
 		return cardRegistrationModels.CardRegistrationResponseDTO{}, fmt.Errorf("error marshalling request body: %w", err)
@@ -145,6 +187,13 @@ func (dd *DirectDebitController) DoCardRegistration(cardRegistrationRequestDTO c
 
 func (dd *DirectDebitController) DoRefund(refundRequestDTO refundModels.RefundRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, tokenB2B2C string, deviceId string, isProduction bool) (refundModels.RefundResponseDTO, error) {
 	url := commons.DIRECT_DEBIT_REFUND
+	refundRequestDTO.AdditionalInfo.Origin = createVaModels.Origin{
+		Product:       "SDK",
+		Source:        "Golang",
+		SourceVersion: commons.SDK_VERSION,
+		System:        "doku-golang-library",
+		ApiFormat:     "SNAP",
+	}
 	minifiedRequestBody, err := json.Marshal(refundRequestDTO)
 	if err != nil {
 		return refundModels.RefundResponseDTO{}, fmt.Errorf("error marshalling request body: %w", err)
@@ -161,7 +210,13 @@ func (dd *DirectDebitController) DoRefund(refundRequestDTO refundModels.RefundRe
 func (dd *DirectDebitController) DoCheckStatus(checkStatusRequestDTO checkStatusModels.CheckStatusRequestDTO, secretKey string, clientId string, tokenB2B string, isProduction bool) (checkStatusModels.CheckStatusResponseDTO, error) {
 
 	url := commons.DIRECT_DEBIT_CHECK_STATUS
-
+	checkStatusRequestDTO.AdditionalInfo.Origin = createVaModels.Origin{
+		Product:       "SDK",
+		Source:        "Golang",
+		SourceVersion: commons.SDK_VERSION,
+		System:        "doku-golang-library",
+		ApiFormat:     "SNAP",
+	}
 	minifiedRequestBody, err := json.Marshal(checkStatusRequestDTO)
 	if err != nil {
 		return checkStatusModels.CheckStatusResponseDTO{}, fmt.Errorf("error marshalling request body: %w", err)
@@ -185,6 +240,13 @@ func (dd *DirectDebitController) DoCheckStatus(checkStatusRequestDTO checkStatus
 
 func (dd *DirectDebitController) DoCardRegistrationUnbinding(cardRegistrationUnbindingRequestDTO registrationCardUnbindingModels.CardRegistrationUnbindingRequestDTO, secretKey string, clientId string, ipAddress string, tokenB2B string, isProduction bool) (registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO, error) {
 	url := commons.DIRECT_DEBIT_CARD_UNBINDING
+	cardRegistrationUnbindingRequestDTO.AdditionalInfo.Origin = createVaModels.Origin{
+		Product:       "SDK",
+		Source:        "Golang",
+		SourceVersion: commons.SDK_VERSION,
+		System:        "doku-golang-library",
+		ApiFormat:     "SNAP",
+	}
 	minifiedRequestBody, err := json.Marshal(cardRegistrationUnbindingRequestDTO)
 	if err != nil {
 		return registrationCardUnbindingModels.CardRegistrationUnbindingResponseDTO{}, fmt.Errorf("error marshalling request body: %w", err)

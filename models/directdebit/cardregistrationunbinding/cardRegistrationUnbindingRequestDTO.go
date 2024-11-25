@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	directDebitChannel "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons/utils/directdebit"
+	createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
 )
 
 type CardRegistrationUnbindingRequestDTO struct {
@@ -12,7 +13,8 @@ type CardRegistrationUnbindingRequestDTO struct {
 }
 
 type CardRegistrationUnbindingAdditionalInfoRequestDTO struct {
-	Channel string `json:"channel"`
+	Channel string                `json:"channel"`
+	Origin  createVaModels.Origin `json:"origin"`
 }
 
 func (au *CardRegistrationUnbindingRequestDTO) ValidateCardRegistrationUnbindingRequest() error {
