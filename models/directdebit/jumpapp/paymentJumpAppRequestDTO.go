@@ -12,7 +12,7 @@ type PaymentJumpAppRequestDTO struct {
 	PartnerReferenceNo string                                 `json:"partnerReferenceNo"`
 	ValidUpTo          string                                 `json:"validUpTo,omitempty"`
 	PointOfInitiation  string                                 `json:"pointOfInitiation,omitempty"`
-	UrlParam           UrlParamDTO                            `json:"urlParam"`
+	UrlParam           []UrlParamDTO                          `json:"urlParam"`
 	Amount             createVaModels.TotalAmount             `json:"amount"`
 	AdditionalInfo     PaymentJumpAppAdditionalInfoRequestDTO `json:"additionalInfo"`
 }
@@ -24,10 +24,11 @@ type UrlParamDTO struct {
 }
 
 type PaymentJumpAppAdditionalInfoRequestDTO struct {
-	Channel    string                `json:"channel"`
-	OrderTitle string                `json:"orderTitle"`
-	Metadata   string                `json:"metadata"`
-	Origin     createVaModels.Origin `json:"origin"`
+	Channel                    string                `json:"channel"`
+	OrderTitle                 string                `json:"orderTitle"`
+	Metadata                   string                `json:"metadata"`
+	Origin                     createVaModels.Origin `json:"origin"`
+	SupportDeepLinkCheckoutUrl bool                  `json:"supportDeepLinkCheckoutUrl"`
 }
 
 func (dto *PaymentJumpAppRequestDTO) ValidatePaymentJumpAppRequest() error {
@@ -41,9 +42,10 @@ func (dto *PaymentJumpAppRequestDTO) ValidatePaymentJumpAppRequest() error {
 		}
 	}
 
-	if !strings.EqualFold(dto.UrlParam.Type, "PAY_RETURN") {
-		return errors.New("urlParam.type must always be PAY_RETURN")
+	for _, item := range dto.UrlParam {
+		if !strings.EqualFold(item.Type, "PAY_RETURN") {
+			return errors.New("urlParam.type must always be PAY_RETURN")
+		}
 	}
-
 	return nil
 }
