@@ -179,7 +179,7 @@ func (dto *CreateVaRequestDto) validateVirtualAccountEmail() (bool, string) {
 	if len(dto.VirtualAccountEmail) > 255 {
 		return false, "VirtualAccountEmail must be 255 characters or fewer. Ensure that VirtualAccountEmail is no longer than 255 characters. Example: 'toru@example.com'."
 	}
-	if !regexp.MustCompile(`^[\w-]+@([\w-]+\.)+[\w-]{2,4}$`).MatchString(dto.VirtualAccountEmail) {
+	if !regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`).MatchString(dto.VirtualAccountEmail) {
 		return false, "VirtualAccountEmail is not in a valid email format. Ensure it contains an '@' symbol followed by a domain name. Example: 'toru@example.com'."
 	}
 	return true, ""
