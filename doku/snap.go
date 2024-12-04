@@ -287,7 +287,7 @@ func (snap *Snap) DoAccountBinding(accountBindingRequest accountBindingModels.Ac
 }
 
 func (snap *Snap) DoBalanceInquiry(balanceInquiryRequestDto balanceInquiryModels.BalanceInquiryRequestDto, deviceId string, ipAddress string, authCode string) (balanceInquiryModels.BalanceInquiryResponseDto, error) {
-	err := balanceInquiryRequestDto.ValidateBalanceInquiryRequest()
+	err := balanceInquiryRequestDto.ValidateBalanceInquiryRequest(authCode)
 	if err != nil {
 		return balanceInquiryModels.BalanceInquiryResponseDto{
 			ResponseCode:    "5001100",

@@ -16,12 +16,12 @@ type AccountBindingRequestDTO struct {
 type AccountBindingAdditionalInfoRequestDto struct {
 	Channel                string                `json:"channel"`
 	CustIdMerchant         string                `json:"custIdMerchant"`
-	CustomerName           string                `json:"customerName"`
-	Email                  string                `json:"email"`
-	IdCard                 string                `json:"idCard"`
-	Country                string                `json:"country"`
-	Address                string                `json:"address"`
-	DateOfBirth            string                `json:"dateOfBirth"`
+	CustomerName           string                `json:"customerName,omitempty"`
+	Email                  string                `json:"email,omitempty"`
+	IdCard                 string                `json:"idCard,omitempty"`
+	Country                string                `json:"country,omitempty"`
+	Address                string                `json:"address,omitempty"`
+	DateOfBirth            string                `json:"dateOfBirth,omitempty"`
 	SuccessRegistrationUrl string                `json:"successRegistrationUrl"`
 	FailedRegistrationUrl  string                `json:"failedRegistrationUrl"`
 	DeviceModel            string                `json:"deviceModel"`
