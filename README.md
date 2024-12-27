@@ -1,380 +1,934 @@
+# DOKU GOLANG SDK Documentation
 
-# DOKU Golang Library
-Welcome to the DOKU Golang library! This powerful tool simplifies access to the DOKU API for your server-side Go applications.
+## Introduction
+Welcome to the DOKU Golang SDK! This SDK simplifies access to the DOKU API for your GO applications, enabling seamless integration with payment and virtual account services.
 
-## Documentation
-For detailed information, visit the full [DOKU API Docs](https://developers.doku.com/accept-payment/direct-api/snap).
+If your looking for another language  [Node.js](https://github.com/PTNUSASATUINTIARTHA-DOKU/doku-nodejs-library), [PHP](https://github.com/PTNUSASATUINTIARTHA-DOKU/doku-php-library), [Python](https://github.com/PTNUSASATUINTIARTHA-DOKU/doku-python-library), [Java](https://github.com/PTNUSASATUINTIARTHA-DOKU/doku-java-library)
 
-## Requirements
-- Go 1.22.2 or higher.
+## Table of Contents
+- [DOKU Golang SDK Documentation](#doku-php-sdk-documentation)
+  - [1. Getting Started](#1-getting-started)
+  - [2. Usage](#2-usage)
+    - [Virtual Account](#virtual-account)
+      - [I. Virtual Account (DGPC \& MGPC)](#i-virtual-account-dgpc--mgpc)
+      - [II. Virtual Account (DIPC)](#ii-virtual-account-dipc)
+      - [III. Check Virtual Account Status](#iii-check-virtual-account-status)
+    - [B. Binding / Registration Operations](#b-binding--registration-operations)
+      - [I. Account Binding](#i-account-binding)
+      - [II. Card Registration](#ii-card-registration)
+    - [C. Direct Debit and E-Wallet](#c-direct-debit-and-e-wallet)
+      - [I. Request Payment](#i-request-payment)
+      - [II. Request Payment Jump App](#ii-request-payment-jump-app)
+  - [3. Other Operation](#3-other-operation)
+    - [Check Transaction Status](#a-check-transaction-status)
+    - [Refund](#b-refund)
+    - [Balance Inquiry](#c-balance-inquiry)
+  - [4. Error Handling and Troubleshooting](#4-error-handling-and-troubleshooting)
 
-## Installation
-Get started by installing the library:
 
 
-```xml
+
+## 1. Getting Started
+
+### Requirements
+- Go 1.22.2 or higher
+
+### Installation
+To install the DOKU Snap SDK, use GO:
+```bash
 go get github.com/lib/pq
 go get -u github.com/golang-jwt/jwt/v4
 go get github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library@latest
 ```
 
+### Configuration
+Before using the Doku Snap SDK, you need to initialize it with your credentials:
+1. **Client ID** and **Secret Key**: Retrieve these from the Integration menu in your Doku Dashboard
+2. **Private Key** and **Public Key** : Generate your Private Key and Public Key
+Merchant privateKey and publicKey
+How to generate :
+1 Generate private key RSA : **openssl genrsa -out private.key 2048**
+2 Set passphrase your private key RSA : **openssl pkcs8 -topk8 -inform PEM -outform PEM -in private.key -out pkcs8.key -v1 PBE-SHA1-3DES**
+3 Generate public key RSA : **openssl rsa -in private.key -outform PEM -pubout -out public.pem**
 
-## Usage
-This section will guide you through setting up the DOKU Golang library, creating payment requests, and handling notifications. Let’s get started!
+The encryption model applied to messages involves both asymmetric and symmetric encryption, utilizing a combination of Private Key and Public Key, adhering to the following standards:
 
-### 1. Configuration
-To configure the library, you'll need your account's Client ID, Secret Key, and Private Key. Here’s how:
+  1. Standard Asymmetric Encryption Signature: SHA256withRSA dengan Private Key ( Kpriv ) dan Public Key ( Kpub ) (256 bits)
+  2. Standard Symmetric Encryption Signature HMAC_SHA512 (512 bits)
+  3. Standard Symmetric Encryption AES-256 dengan client secret sebagai encryption key.
 
-1. **Client ID and Secret Key:** Retrieve these from the Integration menu in your [DOKU Dashboard](https://dashboard.doku.com/bo/login).
-2. **Private Key:** Generate your Private Key following DOKU’s guide and insert the corresponding Public Key into the same menu.
+| **Parameter**       | **Description**                                    | **Required** |
+|-----------------|----------------------------------------------------|--------------|
+| `privateKey`    | The private key for the partner service.           | ✅          |
+| `publicKey`     | The public key for the partner service.            | ✅           |
+| `clientId`      | The client ID associated with the service.         | ✅           |
+| `secretKey`     | The secret key for the partner service.            | ✅           |
+| `isProduction`  | Set to true for production environment             | ✅           |
+| `issuer`        | Optional issuer for advanced configurations.       | ❌           |
+| `authCode`      | Optional authorization code for advanced use.      | ❌           |
 
-> Your private key will not be transmitted or shared with DOKU. It remains on your server and is only used to sign the requests you send to DOKU.
 
 ```go
 import "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/doku"
 
-var dokuSnap *doku.Snap
-func InitializeSnap() {
-    doku.TokenController = controllers.TokenController{}
-    doku.VaController = controllers.VaController{}
-    dokuSnap = &doku.Snap{
-	PrivateKey:   privateKey, 
-	ClientId:     clientId, 
-	IsProduction: false,
-	SecretKey:    secretKey, 
-	PublicKey:    publicKey,
+privateKey := "YOUR_PRIVATE_KEY"
+publicKey := "YOUR_PUBLIC_KEY"
+clientId := "YOUR_CLIENT_ID"
+secretKey := "YOUR_SECRET_KEY"
+isProduction := false
+issuer := "YOUR_ISSUER"
+
+doku.TokenController = controllers.TokenController{}
+doku.VaController = controllers.VaController{}
+doku.NotificationController = controllers.NotificationController{}
+doku.DirectDebitController = &controllers.DirectDebitController{}
+
+var snap doku.Snap
+snap = doku.Snap{
+    PrivateKey:   privateKey,
+    ClientId:     clientId,
+    IsProduction: isProduction,
+    SecretKey:    secretKey,
+    Issuer: 	  issuer,
+    PublicKey:    publicKey,
+}
+```
+
+## 2. Usage
+
+**Initialization**
+Always start by initializing the Snap object.
+
+```go
+snap = doku.Snap{
+    PrivateKey:   privateKey,
+    ClientId:     clientId,
+    IsProduction: isProduction,
+    SecretKey:    secretKey,
+    Issuer: 	  issuer,
+    PublicKey:    publicKey,
+}
+```
+### Virtual Account
+#### I. Virtual Account (DGPC & MGPC)
+##### DGPC
+- **Description:** A pre-generated virtual account provided by DOKU.
+- **Use Case:** Recommended for one-time transactions.
+##### MGPC
+- **Description:** Merchant generated virtual account.
+- **Use Case:** Recommended for top up business model.
+
+Parameters for **createVA** and **updateVA**
+<table>
+  <thead>
+    <tr>
+      <th><strong>Parameter</strong></th>
+      <th colspan="2"><strong>Description</strong></th>
+      <th><strong>Data Type</strong></th>
+      <th><strong>Required</strong></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>partnerServiceId</code></td>
+      <td colspan="2">The unique identifier for the partner service.</td>
+      <td>String(20)</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td><code>customerNo</code></td>
+      <td colspan="2">The customer's identification number.</td>
+      <td>String(20)</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td><code>virtualAccountNo</code></td>
+      <td colspan="2">The virtual account number associated with the customer.</td>
+      <td>String(20)</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td><code>virtualAccountName</code></td>
+      <td colspan="2">The name of the virtual account associated with the customer.</td>
+      <td>String(255)</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td><code>virtualAccountEmail</code></td>
+      <td colspan="2">The email address associated with the virtual account.</td>
+      <td>String(255)</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td><code>virtualAccountPhone</code></td>
+      <td colspan="2">The phone number associated with the virtual account.</td>
+      <td>String(9-30)</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td><code>trxId</code></td>
+      <td colspan="2">Invoice number in Merchants system.</td>
+      <td>String(64)</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td rowspan="2"><code>totalAmount</code></td>
+      <td colspan="2"><code>value</code>: Transaction Amount (ISO 4217) <br> <small>Example: "11500.00"</small></td>
+      <td>String(16.2)</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td colspan="2"><code>Currency</code>: Currency <br> <small>Example: "IDR"</small></td>
+      <td>String(3)</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td rowspan="4"><code>additionalInfo</code></td>
+      <td colspan="2"><code>channel</code>: Channel that will be applied for this VA <br> <small>Example: VIRTUAL_ACCOUNT_BANK_CIMB</small></td>
+      <td>String(20)</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td rowspan="3"><code>virtualAccountConfig</code></td>
+      <td><code>reusableStatus</code>: Reusable Status For Virtual Account Transaction <br><small>value TRUE or FALSE</small></td>
+      <td>Boolean</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td><code>minAmount</code>: Minimum Amount can be used only if <code>virtualAccountTrxType</code> is Open Amount (O). <br><small>Example: "10000.00"</small></td>
+      <td>String(16.2)</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td><code>maxAmount</code>: Maximum Amount can be used only if <code>virtualAccountTrxType</code> is Open Amount (O). <br><small>Example: "5000000.00"</small></td>
+      <td>String(16.2)</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td><code>virtualAccountTrxType</code></td>
+      <td colspan="2">Transaction type for this transaction. C (Closed Amount), O (Open Amount)</td>
+      <td>String(1)</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td><code>expiredDate</code></td>
+      <td colspan="2">Expiration date for Virtual Account. ISO-8601 <br><small>Example: "2023-01-01T10:55:00+07:00"</small></td>
+      <td>String</td>
+      <td>❌</td>
+    </tr>
+  </tbody>
+</table>
+
+
+1. **Create Virtual Account**
+    - **Function:** `createVa`
+    ```go
+      import createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
+
+      createVaRequestDTO := createVaModels.CreateVaRequestDto{
+          PartnerServiceId: "8129014",
+          CustomerNo:       "17223992157",
+          VirtualAccountNo: "812901417223992157",
+          VirtualAccountName: "Test Example",
+          VirtualAccountEmail: "test.example@gmail.com",
+          VirtualAccountPhone: "621722399214895",
+          TrxId: "INV_CIMB_TEST_1",
+          TotalAmount: createVaModels.TotalAmount{
+              Value:    "12500.00",
+              Currency: "IDR",
+          },
+          AdditionalInfo: createVaModels.AdditionalInfo{
+              Channel: "VIRTUAL_ACCOUNT_BANK_CIMB",
+              VirtualAccountConfig: createVaModels.VirtualAccountConfig{
+                  ReusableStatus: true,
+              },
+          },
+          VirtualAccountTrxType: "C",
+          ExpiredDate: "2025-08-31T09:54:04+07:00",
+      }
+
+      createVaResponse := snap.CreateVa(createVaRequestDTO)
+    ```
+
+2. **Update Virtual Account**
+    - **Function:** `updateVa`
+
+    ```go
+      import updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
+
+      updateVaRequestDTO := updateVaModels.UpdateVaDTO{
+          PartnerServiceId:    "8129014",
+          CustomerNo:          "17223992157",
+          VirtualAccountNo:    "812901417223992157",
+          VirtualAccountName:  "Test Example",
+          VirtualAccountEmail: "test.example@gmail.com",
+          VirtualAccountPhone: "621722399214895",
+          TrxId:               "INV_CIMB_TEST_1",
+          TotalAmount: createVaModels.TotalAmount{
+              Value:    "12500.00",
+              Currency: "IDR",
+          },
+          AdditionalInfo: updateVaModels.UpdateVaAdditionalInfoDTO{
+              Channel: "VIRTUAL_ACCOUNT_BANK_CIMB",
+              VirtualAccountConfig: updateVaModels.UpdateVaVirtualAccountConfigDTO{
+                  Status: "ACTIVE",
+              },
+          },
+          VirtualAccountTrxType: "C",
+          ExpiredDate:           "2025-08-31T09:54:04+07:00",
+      }
+
+      updateVaResponse, err := snap.updateVa(updateVaRequestDTO);
+    ```
+
+3. **Delete Virtual Account**
+
+    | **Parameter**        | **Description**                                                             | **Data Type**       | **Required** |
+    |-----------------------|----------------------------------------------------------------------------|---------------------|--------------|
+    | `partnerServiceId`    | The unique identifier for the partner service.                             | String(8)        | ✅           |
+    | `customerNo`          | The customer's identification number.                                      | String(20)       | ✅           |
+    | `virtualAccountNo`    | The virtual account number associated with the customer.                   | String(20)       | ✅           |
+    | `trxId`               | Invoice number in Merchant's system.                                       | String(64)       | ✅           |
+    | `additionalInfo`      | `channel`: Channel applied for this VA.<br><small>Example: VIRTUAL_ACCOUNT_BANK_CIMB</small> | String(30)       | ✅    |
+
+    
+  - **Function:** `deletePaymentCode`
+
+    ```go
+    import deleteVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/deleteVa"
+
+    deleteVaRequest := deleteVaModels.DeleteVaRequestDto{
+        PartnerServiceId: "8129014",
+        CustomerNo:       "17223992157",
+        VirtualAccountNo: "812901417223992157",
+        TrxId:            "INV_CIMB_TEST_1",
+        AdditionalInfo: deleteVaModels.DeleteVaRequestAdditionalInfo{
+            Channel: "VIRTUAL_ACCOUNT_BANK_CIMB",
+        },
     }
-    dokuSnap.GetTokenB2B()
+
+    deleteVaResponse, err := snap.DeletePaymentCode(deleteVaRequest)
+    ```
+
+
+#### II. Virtual Account (DIPC)
+- **Description:** The VA number is registered on merchant side and DOKU will forward Acquirer inquiry request to merchant side when the customer make payment at the acquirer channel
+
+- **Function:** `directInquiryVa`
+
+    ```go
+    func directInquiryVa(w http.ResponseWriter, r *http.Request) {
+      authHeader := r.Header.Get("Authorization")
+      isTokenValid := config.Snap.ValidateTokenB2B(authHeader)
+
+      var requestBodyInquiry inquiry.InquiryRequestBodyDTO
+
+      err := json.NewDecoder(r.Body).Decode(&requestBodyInquiry)
+      if err != nil {
+          http.Error(w, "Invalid Request Body", http.StatusBadRequest) message is optional
+          return 
+      }
+      defer r.Body.Close()
+
+      if !isTokenValid {
+          inquiryResponse := inquiry.InquiryResponseBodyDTO{
+              ResponseCode:    "4010000",
+              ResponseMessage: "Unauthorized",
+          }
+          w.WriteHeader(http.StatusUnauthorized)
+          json.NewEncoder(w).Encode(inquiryResponse)
+          return
+      }
+
+      inquiryData, err := GetDataInquiry(w, requestBodyInquiry.InquiryRequestId)
+      if err == sql.ErrNoRows {
+          inquiryResponse := inquiry.InquiryResponseBodyDTO{
+              ResponseCode:    "4012400",
+              ResponseMessage: "Virtual Account Not Found",
+          }
+          w.WriteHeader(http.StatusNotFound)
+          json.NewEncoder(w).Encode(inquiryResponse)
+          return
+      }
+
+      UpdateDirectInquiryRequest(w, r, requestBodyInquiry.TrxDateInit, requestBodyInquiry.VirtualAccountNo)
+
+      inquiryResponse := inquiry.InquiryResponseBodyDTO{
+          ResponseCode:       "2002400",
+          ResponseMessage:    "Successful",
+          VirtualAccountData: &inquiryData,
+      }
+      w.WriteHeader(http.StatusOK)
+      json.NewEncoder(w).Encode(inquiryResponse)
+    }
+    ```
+
+#### III. Check Virtual Account Status
+ | **Parameter**        | **Description**                                                             | **Data Type**       | **Required** |
+|-----------------------|----------------------------------------------------------------------------|---------------------|--------------|
+| `partnerServiceId`    | The unique identifier for the partner service.                             | String(8)        | ✅           |
+| `customerNo`          | The customer's identification number.                                      | String(20)       | ✅           |
+| `virtualAccountNo`    | The virtual account number associated with the customer.                   | String(20)       | ✅           |
+| `inquiryRequestId`    | The customer's identification number.                                      | String(128)       | ❌           |
+| `paymentRequestId`    | The virtual account number associated with the customer.                   | String(128)       | ❌           |
+| `additionalInfo`      | The virtual account number associated with the customer.                   | String      | ❌           |
+
+  - **Function:** `checkStatusVa`
+    ```go
+    import checkStatusVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
+
+    inquiryRequestId := ""
+    paymentRequestId := ""
+    checkStatusVaRequestDto := checkStatusVaModels.CheckStatusVARequestDto{
+        PartnerServiceId: "8129014",
+        CustomerNo:       "17223992157",
+        VirtualAccountNo: "812901417223992157",
+        InquiryRequestId: &inquiryRequestId,
+        PaymentRequestId: &paymentRequestId,
+    }
+
+    snap.CheckStatusVa(checkStatusVaRequestDto)
+    ```
+
+### B. Binding / Registration Operations
+The card registration/account binding process must be completed before payment can be processed. The merchant will send the card registration request from the customer to DOKU.
+
+Each card/account can only registered/bind to one customer on one merchant. Customer needs to verify OTP and input PIN.
+
+| **Services**     | **Binding Type**      | **Details**                        |
+|-------------------|-----------------------|-----------------------------------|
+| Direct Debit      | Account Binding       | Supports **Allo Bank** and **CIMB** |
+| Direct Debit      | Card Registration     | Supports **BRI**                    |
+| E-Wallet          | Account Binding       | Supports **OVO**                    |
+
+#### I. Account Binding 
+1. **Binding**
+
+<table>
+  <thead>
+    <tr>
+      <th><strong>Parameter</strong></th>
+      <th colspan="2"><strong>Description</strong></th>
+      <th><strong>Data Type</strong></th>
+      <th><strong>Required</strong></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>phoneNo</code></td>
+      <td colspan="2">Phone Number Customer. <br> <small>Format: 628238748728423</small> </td>
+      <td>String(9-16)</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td rowspan="13"><code>additionalInfo</code></td>
+      <td colspan="2"><code>channel</code>: Payment Channel<br></td>
+      <td>String</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td colspan="2"><code>custIdMerchant</code>: Customer id from merchant</td>
+      <td>String(64)</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td colspan="2"><code>customerName</code>: Customer name from merchant</td>
+      <td>String(70)</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td colspan="2"><code>email</code>: Customer email from merchant </td>
+      <td>String(64)</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td colspan="2"><code>idCard</code>: Customer id card from merchant</td>
+      <td>String(20)</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td colspan="2"><code>country</code>: Customer country </td>
+      <td>String</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td colspan="2"><code>address</code>: Customer Address</td>
+      <td>String(255)</td>
+      <td>❌</td>
+    </tr>
+        <tr>
+      <td colspan="2"><code>dateOfBirth</code> </td>
+      <td>String(YYYYMMDD)</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td colspan="2"><code>successRegistrationUrl</code>: Redirect URL when binding is success </td>
+      <td>String</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td colspan="2"><code>failedRegistrationUrl</code>: Redirect URL when binding is success fail</td>
+      <td>String</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td colspan="2"><code>deviceModel</code>: Device Model customer </td>
+      <td>String</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td colspan="2"><code>osType</code>: Format: ios/android </td>
+      <td>String</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td colspan="2"><code>channelId</code>: Format: app/web </td>
+      <td>String</td>
+      <td>✅</td>
+    </tr>
+    </tbody>
+  </table> 
+
+  - **Function:** `doAccountBinding`
+
+    ```go
+    import accountBindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/accountbinding"
+
+    deviceId := "YOUR_DEVICE_ID"
+    ipAddress := "YOUR_IP_ADDRESS"
+
+    accountBindingRequest := accountBindingModels.AccountBindingRequestDTO{
+        PhoneNo: "6288912121237",
+        AdditionalInfo: accountBindingModels.AccountBindingAdditionalInfoRequestDto{
+            Channel:                "DIRECT_DEBIT_CIMB_SNAP",
+            CustIdMerchant:         "CUST123",
+            CustomerName:           "John Doe",
+            Email:                  "john.doe@example.com",
+            IdCard:                 "99999",
+            Country:                "Indonesia",
+            Address:                "Jakarta",
+            DateOfBirth:            "19990101",
+            SuccessRegistrationUrl: "https://success.example.com",
+            FailedRegistrationUrl:  "https://fail.example.com",
+            DeviceModel:            "iPhone 12",
+            OsType:                 "ios",
+            ChannelId:              "CH001",
+        },
+    }
+
+    accountBindingResponse, err := snap.DoAccountBinding(accountBindingRequest, deviceId, ipAddress)
+    ```
+
+1. **Unbinding**
+
+    - **Function:** `getTokenB2B2C`
+    ```go
+    authCode := "YOUR_AUTH_CODE_FROM_ACCOUNT_BINDING"
+    responseGetTokenB2B2C, err := snap.GetTokenB2B2C(authCode)
+   ```
+    - **Function:** `doAccountUnbinding`
+    ```go
+    import accountUnbindingModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/accountunbinding"
+
+    accountUnbindingRequest := accountUnbindingModels.AccountUnbindingRequestDTO{
+      TokenId: responseGetTokenB2B2C.AccessToken,
+      AdditionalInfo: accountUnbindingModels.AccountUnbindingAdditionalInfoRequestDTO{
+        Channel: "DIRECT_DEBIT_CIMB_SNAP",
+      },
+    }
+
+    ipAddress := "YOUR_IP_ADDRESS"
+    accountUnbindingResponse, err := snap.DoAccountUnbinding(accountUnbindingRequest, ipAddress)
+    ```
+
+#### II. Card Registration
+1. **Registration**
+    - **Function:** `doCardRegistration`
+
+    ```go
+    import cardRegistrationModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/cardregistration"
+
+    cardRegistRequest := cardRegistrationModels.CardRegistrationRequestDTO{
+      CardData: cardRegistrationModels.BankCardDataDTO{
+        BankCardNo:   "7801",
+        BankCardType: "D",
+        Email:        "email@email.com",
+        ExpiryDate:   "0525",
+      },
+      CustIdMerchant: "Jhon Doe",
+      PhoneNo:        "6282124918109",
+      AdditionalInfo: cardRegistrationModels.CardRegistrationAdditionalInfoRequestDTO{
+        Channel:                "DIRECT_DEBIT_BRI_SNAP",
+        DateOfBirth:            "19990101",
+        SuccessRegistrationUrl: "https://success.example.com",
+        FailedRegistrationUrl:  "https://fail.example.com",
+      },
+    }
+
+    cardRegistrationResponse, err := snap.DoCardRegistration(cardRegistRequest, "DH")
+    ```
+
+2. **UnRegistration**
+    - **Function:** `getTokenB2B2C`
+    ```go
+      authCode := "YOUR_AUTH_CODE_FROM_ACCOUNT_BINDING"
+      responseGetTokenB2B2C, err := snap.GetTokenB2B2C(authCode)
+    ```
+    - **Function:** `doCardUnbinding`
+
+    ```go
+    cardUnbindingRequest := cardUnbindingModels.CardRegistrationUnbindingRequestDTO{
+      TokenId: responseGetTokenB2B2C.AccessToken,
+      AdditionalInfo: cardUnbindingModels.CardRegistrationUnbindingAdditionalInfoRequestDTO{
+          Channel: "DIRECT_DEBIT_BRI_SNAP",
+      },
+    }
+
+    ipAddress := "YOUR_IP_ADDRESS"
+    cardUnbindingResponse, err := snap.DoCardRegistrationUnbinding(cardUnbindingRequest, ipAddress)
+    ```
+
+### C. Direct Debit and E-Wallet 
+
+#### I. Request Payment
+  Once a customer’s account or card is successfully register/bind, the merchant can send a payment request. This section describes how to send a unified request that works for both Direct Debit and E-Wallet channels.
+
+| **Acquirer**       | **Channel Name**         | 
+|-------------------|--------------------------|
+| Allo Bank         | DIRECT_DEBIT_ALLO_SNAP   | 
+| BRI               | DIRECT_DEBIT_BRI_SNAP    | 
+| CIMB              | DIRECT_DEBIT_CIMB_SNAP   |
+| OVO               | EMONEY_OVO_SNAP   | 
+
+##### Common parameter
+<table>
+  <thead>
+    <tr>
+      <th><strong>Parameter</strong></th>
+      <th colspan="2"><strong>Description</strong></th>
+      <th><strong>Data Type</strong></th>
+      <th><strong>Required</strong></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>partnerReferenceNo</code></td>
+      <td colspan="2"> Reference No From Partner <br> <small>Format: 628238748728423</small> </td>
+      <td>String(9-16)</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td rowspan="2"><code>amount</code></td>
+      <td colspan="2"><code>value</code>: Transaction Amount (ISO 4217) <br> <small>Example: "11500.00"</small></td>
+      <td>String(16.2)</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td colspan="2"><code>Currency</code>: Currency <br> <small>Example: "IDR"</small></td>
+      <td>String(3)</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td rowspan="4"><code>additionalInfo</code> </td>
+      <td colspan = "2" ><code>channel</code>: payment channel</td>
+      <td>String</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td colspan="2"><code>remarks</code>:Remarks from Partner</td>
+      <td>String(40)</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td colspan="2"><code>successPaymentUrl</code>: Redirect Url if payment success</td>
+      <td>String</td>
+      <td>✅</td>
+    </tr>
+        <tr>
+      <td colspan="2"><code>failedPaymentUrl</code>: Redirect Url if payment fail
+      </td>
+      <td>String</td>
+      <td>✅</td>
+    </tr>
+    </tbody>
+  </table> 
+
+ ##### Allo Bank Specific Parameters
+
+| **Parameter**                        | **Description**                                               | **Required** |
+|--------------------------------------|---------------------------------------------------------------|--------------|
+| `additionalInfo.remarks`             | Remarks from the partner                                      | ✅           |
+| `additionalInfo.lineItems.name`      | Item name (String)                                            | ✅           |
+| `additionalInfo.lineItems.price`     | Item price (ISO 4217)                                         | ✅           |
+| `additionalInfo.lineItems.quantity`  | Item quantity (Integer)                                      | ✅           |
+| `payOptionDetails.payMethod`         | Balance type (options: BALANCE/POINT/PAYLATER)                | ✅           |
+| `payOptionDetails.transAmount.value` | Transaction amount                                            | ✅           |
+| `payOptionDetails.transAmount.currency` | Currency (ISO 4217, e.g., "IDR")                             | ✅           |
+
+
+#####  CIMB Specific Parameters
+
+| **Parameter**                        | **Description**                                               | **Required** |
+|--------------------------------------|---------------------------------------------------------------|--------------|
+| `additionalInfo.remarks`             | Remarks from the partner                                      | ✅           |
+
+
+#####  DANA Specific Parameters
+
+| **Parameter**                           | **Description**                                                | **Required** |
+| ------------------------------------|---------------------------------------------------------------|--------------|
+| `additionalInfo.orderTitle`              | Order title from merchant (optional)                          | ❌           |
+| `additionalInfo.supportDeepLinkCheckoutUrl` | Value ('true' for Jumpapp behavior, 'false' for webview, default: 'false') | ❌           |
+
+
+#####  OVO Specific Parameters
+
+| **Parameter**                           | **Description**                                                | **Required** |
+|------------------------------------------|---------------------------------------------------------------|--------------|
+| `feeType`                                | Fee type from partner (values: OUR, BEN, SHA)                  | ❌           |
+| `payOptionDetails.payMethod`             | Payment method format: CASH, POINTS                            | ✅           |
+| `payOptionDetails.transAmount.value`    | Transaction amount (ISO 4217)                                  | ✅           |
+| `payOptionDetails.transAmount.currency` | Currency (ISO 4217, e.g., "IDR")                               | ✅           |
+| `payOptionDetails.feeAmount.value`      | Fee amount (if applicable)                                     | ✅           |
+| `payOptionDetails.feeAmount.currency`   | Currency for the fee                                          | ✅           |
+| `additionalInfo.paymentType`            | Transaction type (values: SALE, RECURRING)                     | ✅           |
+
+  
+Here’s how you can use the `doPayment` function for both payment types:
+  - **Function:** `doPayment`
+    
+    ```go
+    paymentModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/payment"
+    createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
+
+    paymentRequest := paymentModels.PaymentRequestDTO{
+      PartnerReferenceNo: "INV-101",
+      FeeType:            "OUR",  // Only for OVO (Optional) - OUR/BEN/SHA
+      Amount: createVaModels.TotalAmount{
+          Value:    "10000.00", 
+          Currency: "IDR",     
+      },
+      PayOptionDetails: []paymentModels.PayOptionDetailsDTO{ // Only for OVO or ALLO_BANK (Required)
+          {
+              PayMethod: "CASH", // CASH / POINTS (OVO) or BALANCE/POINT/PAYLATER (ALLO_BANK)
+              TransAmount: createVaModels.TotalAmount{
+                  Value:    "10000.00", 
+                  Currency: "IDR",         
+              },
+              FeeAmount: createVaModels.TotalAmount{
+                  Value:    "1100.00", 
+                  Currency: "IDR",
+              },
+          },
+      },
+      AdditionalInfo: paymentModels.PaymentAdditionalInfoDTO{
+          Channel:           "EMONEY_OVO_SNAP", //  "DIRECT_DEBIT_CIMB / DIRECT_DEBIT_BRI_SNAP / DIRECT_DEBIT_ALLO_SNAP / EMONEY_OVO_SNAP"
+          Remarks:           "Payment Order",  
+          SuccessPaymentUrl: "https://success.example.com",
+          FailedPaymentUrl:  "https://fail.example.com",
+          LineItems: []paymentModels.LineItemsDTO{ // Only for ALLO_BANK, 
+              {
+                  Name:     "Bag",     
+                  Price:    "10000.00",     
+                  Quantity: "1",  
+              },
+          },
+          PaymentType: "SALE", // Only For OVO and BRI: SALE, RECURRING (Optional)
+      },
+      ChargeToken: "",
+    }
+    authCode := "YOUR_AUTH_CODE_FROM_BINDING"
+    ipAddress := "YOUR_IP_ADDRESS"
+    paymentResponse, err := snap.DoPayment(dataRequest, ipAddress, authCode)
+    ```
+#### II. Request Payment Jump App
+| **Acquirer**      | **Channel Name**        | 
+|-------------------|-------------------------|
+| DANA              | EMONEY_DANA_SNAP        | 
+| ShopeePay         | EMONEY_SHOPEE_PAY_SNAP  |
+
+The following fields are common across **DANA and ShopeePay** requests:
+<table>
+  <thead>
+    <tr>
+      <th><strong>Parameter</strong></th>
+      <th colspan="2"><strong>Description</strong></th>
+      <th><strong>Data Type</strong></th>
+      <th><strong>Required</strong></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>partnerReferenceNo</code></td>
+      <td colspan="2"> Reference No From Partner <br> <small>Examplae : INV-0001</small> </td>
+      <td>String(9-16)</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td><code>validUpto</code></td>
+      <td colspan = "2" >Expired time payment url </td>
+      <td>String</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td><code>pointOfInitiation</code></td>
+      <td colspan = "2" >Point of initiation from partner,<br> value: app/pc/mweb </td>
+      <td>String</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td rowspan = "3" > <code>urlParam</code></td>
+      <td colspan = "2"><code>url</code>: URL after payment sucess </td>
+      <td>String</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td colspan="2"><code>type</code>: Pay Return<br> <small>always PAY_RETURN </small></td>
+      <td>String</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td colspan="2"><code>isDeepLink</code>: Is Merchant use deep link or not<br> <small>Example: "Y/N"</small></td>
+      <td>String(1)</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td rowspan="2"><code>amount</code></td>
+      <td colspan="2"><code>value</code>: Transaction Amount (ISO 4217) <br> <small>Example: "11500.00"</small></td>
+      <td>String(16.2)</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td colspan="2"><code>Currency</code>: Currency <br> <small>Example: "IDR"</small></td>
+      <td>String(3)</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td><code>additionalInfo</code> </td>
+      <td colspan = "2" ><code>channel</code>: payment channel</td>
+      <td>String</td>
+      <td>✅</td>
+    </tr>
+    </tbody>
+  </table> 
+
+##### DANA
+
+DANA spesific parameters
+<table>
+    <thead>
+    <tr>
+      <th><strong>Parameter</strong></th>
+      <th colspan="2"><strong>Description</strong></th>
+      <th><strong>Data Type</strong></th>
+      <th><strong>Required</strong></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+      <td rowspan = "2" ><code>additionalInfo</code></td>
+      <td colspan = "2" ><code>orderTitle</code>: Order title from merchant</td>
+      <td>String</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td colspan = "2" ><code>supportDeepLinkCheckoutUrl</code> : Value 'true' for Jumpapp behaviour, 'false' for webview, false by default</td>
+      <td>String</td>
+      <td>❌</td>
+    </tr>
+    </tbody>
+  </table> 
+For Shopeepay and Dana you can use the `doPaymentJumpApp` function for for Jumpapp behaviour
+
+- **Function:** `doPaymentJumpApp`
+
+```go
+jumpAppModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/jumpapp"
+
+paymentJumpAppRequest := jumpAppModels.PaymentJumpAppRequestDTO{
+  PartnerReferenceNo: "INV-101",
+  ValidUpTo:          "2025-12-31T23:59:59Z",
+  PointOfInitiation:  "app", // app/pc/mweb
+  UrlParam: []jumpAppModels.UrlParamDTO{{
+    Url: "https://your.url/endpoint",
+    Type: "PAY_RETURN",
+    IsDeepLink: "Y",
+  },},
+  Amount: createVaModels.TotalAmount{
+    Value: "10000.00",
+    Currency: "IDR",
+  },
+  AdditionalInfo: jumpAppModels.PaymentJumpAppAdditionalInfoRequestDTO{
+    Channel: "EMONEY_DANA_SNAP" // EMONEY_DANA_SNAP or EMONEY_SHOPEE_PAY_SNAP
+    OrderTitle: "Payment Order",
+    Metadata: "Your Metadata", // Only for ShopeePay (Optional)
+    SupportDeepLinkCheckoutUrl: true, // Only for DANA (Optional)
+  },
 }
+
+deviceId := "YOUR_DEVICE_ID"
+ipAddress := "YOUR_IP_ADDRESS"
+
+snap.DoPaymentJumpApp(jumpappRequest, deviceId, ipAddress)
 ```
 
-### 2. Payment Flow
-This section guides you through the steps to process payments using the DOKU Golang library. You'll learn how to create a payment request and call the payment function.
-#### a. Virtual Account
-DOKU offers three ways to use a virtual account: DOKU-Generated Payment Code (DGPC), Merchant-Generated Payment Code (MGPC), and Direct Inquiry Payment Code (DIPC). You can find the full details [here](https://developers.doku.com/accept-payment/direct-api/snap/integration-guide/virtual-account).
+## 3. Other Operation
 
-> [!Important!]
->Each transaction can use only one feature at a time, but you can use multiple features across different transactions.
+### A. Check Transaction Status
 
-##### Create VA DGPC and MGPC
-###### CreateVaRequestDTO Model
-Create the request object to generate a VA number. Specify the acquirer in the request object. This function is applicable for DGPC and MGPC.
+  ```go	
+  checkStatusModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/checkstatus"
 
-```go
-import createVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/createVa"
-
-createVaRequestDTO = createVaModels.CreateVaRequestDto{
-        PartnerServiceId: "    1899",
-	CustomerNo:       "20240704001",
-	VirtualAccountNo: "    189920240704001",
-	VirtualAccountName: "SDK TEST",
-	VirtualAccountEmail: "sdk@email.com",
-	VirtualAccountPhone: "6281288932399",
-	TrxId: "INV_20240711001",
-	TotalAmount: createVaModels.TotalAmount{
-			Value:    "10000.00",
-			Currency: "IDR",
-	},
-	AdditionalInfo: createVaModels.AdditionalInfo{
-		Channel: "VIRTUAL_ACCOUNT_BANK_CIMB",
-		VirtualAccountConfig: createVaModels.VirtualAccountConfig{
-			ReusableStatus: false,
-		},
-	},
-	VirtualAccountTrxType: "C",
-	ExpiredDate: "2024-07-29T09:54:04+07:00",
+  func DoCheckStatus(checkStatusRequestDTO checkStatusModels.CheckStatusRequestDTO) (checkStatusModels.CheckStatusResponseDTO, error) {
+	return snap.DoCheckStatus(checkStatusRequestDTO)
 }
-```
+  ```
 
-###### createVa Function
-Call the `createVa` function to request the paycode from DOKU. You’ll receive the paycode and payment instructions to display to your customers. This function is applicable for DGPC and MGPC.
+### B. Refund
 
-```go
-createVaResponse := dokuSnap.CreateVa(createVaRequestDTO)
-```
+  ```go
+  refundModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/refund"
 
-##### DIPC
-###### inquiryResponse Function
-If you use the DIPC feature, you can generate your own paycode and allow your customers to pay without direct communication with DOKU. After customers initiate the payment via the acquirer's channel, DOKU sends an inquiry request to you for validation. This function is applicable for DIPC.
+  func DoRefund(refundRequestDTO refundModels.RefundRequestDTO, ipAddress string, authCode string, deviceId string) (refundModels.RefundResponseDTO, error){
+	return snap.DoRefund(refundRequestDTO, ipAddress, authCode, deviceId)
+  }
+  ```
 
-> [!Important!]
->Before sending the inquiry, DOKU sends a token request. Use the `generateToken` function found in the Handling Payment Notification section.
+### C. Balance Inquiry
 
-```go
-func main() {
-     config.InitializeDB()
-     defer config.CloseDB()
-     config.InitializeSnap()
-     http.HandleFunc("/v1.1/transfer-va/inquiry", handlers.DirectInquiryHandler)
-     if err := http.ListenAndServe(":8091", nil); err != nil {
-	fmt.Println("Server failed:", err)
-     }
-}
+  ```go
+  balanceInquiryModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/directdebit/balanceinquiry"
 
-func DirectInquiryHandler(w http.ResponseWriter, r *http.Request) {
-	directInquiryResponse, statusCode := services.ProcessDirectInquiry(w, r)
-	responseInquiry, err := json.Marshal(directInquiryResponse)
-	if err != nil {
-		http.Error(w, "Failed to generate JSON response", http.StatusInternalServerError)
-	}
+  func DoBalanceInquiry(balanceInquiryRequestDto balanceInquiryModels.BalanceInquiryRequestDto, deviceId string, ipAddress string, authCode string) (balanceInquiryModels.BalanceInquiryResponseDto, error) {
+	return snap.DoBalanceInquiry(balanceInquiryRequestDto, deviceId, ipAddress, authCode)
+  }
+  ```
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	w.Write(responseInquiry) 
-}
+## 4. Error Handling and Troubleshooting
 
-func ProcessDirectInquiry(w http.ResponseWriter, r *http.Request) (inquiry.InquiryResponseBodyDTO, int) {
-	authHeader := r.Header.Get("Authorization")
-	isTokenValid := config.Snap.ValidateTokenB2B(authHeader)
+The SDK returns errors for various conditions. Always check for errors when making API calls:
+ ```go
+  import ( "log" )
 
-	var requestBodyInquiry inquiry.InquiryRequestBodyDTO
+  createVaResponse, err := snap.CreateVa(createVaRequestDto)
+  if err != nil {
+    // Handle the error appropriately
+    log.Printf("Error: %s", err.Error())
+    // You can also return or take other actions based on the error
+    return
+  }
 
-	err := json.NewDecoder(r.Body).Decode(&requestBodyInquiry)
-	if err != nil {
-		http.Error(w, "Invalid Request Body", http.StatusBadRequest) // error message is optional 
-	}
+  // Process successful result
+  log.Printf("VA created successfully: %+v", createVaResponse)
+ ```
 
-	defer r.Body.Close()
+This section provides common errors and solutions:
 
-	if isTokenValid {
-		inquiryData, err := GetDataInquiry(w, requestBodyInquiry.InquiryRequestId)
-
-		if err == sql.ErrNoRows {
-			return GenerateResponseDirectInquiryVaNotFound(), http.StatusNotFound
-		}
-
-		UpdateDirectInquiryRequest(w, r, requestBodyInquiry.TrxDateInit, requestBodyInquiry.VirtualAccountNo)
-
-		return GenerateResponseDirectInquiry(inquiryData), http.StatusOK
-
-	} else {
-		return GenerateResponseDirectInquiryUnauthorized(), http.StatusUnauthorized
-	}
-}
-
-func UpdateDirectInquiryRequest(w http.ResponseWriter, r *http.Request, trxDate string, vaNumber string) {
-
-	query := `
-		UPDATE direct_inquiry_va
-		SET status_va = 'inquiry', settlement_time = $1
-		WHERE va_number = $2;
-	`
-
-	_, err := config.DB.Exec(query, trxDate, vaNumber)
-
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Error Insert Header Request: %v", err), http.StatusInternalServerError)
-		log.Println("Error inserting data:", err)
-		return
-	}
-}
-
-func GetDataInquiry(w http.ResponseWriter, inquiryRequestID string) (inquiry.InquiryRequestVirtualAccountDataDTO, error) {
-	var queryGetInquiryJson = `
-			SELECT inquiry_json_object
-			FROM direct_inquiry
-			WHERE inquiry_request_id = $1;
-		`
-
-	var inquiryJsonObject string
-
-	err := config.DB.QueryRow(queryGetInquiryJson, inquiryRequestID).Scan(&inquiryJsonObject)
-
-	// data not found
-	if err == sql.ErrNoRows {
-		http.Error(w, "Data not found", http.StatusNotFound) // error message is optional
-		return inquiry.InquiryRequestVirtualAccountDataDTO{}, err
-	}
-
-	// others error
-	if err != nil {
-		http.Error(w, "Error retrieving inquiry data", http.StatusInternalServerError) -> // error message is optional
-		return inquiry.InquiryRequestVirtualAccountDataDTO{}, err
-	}
-
-	var inquiryData inquiry.InquiryRequestVirtualAccountDataDTO
-	err = json.Unmarshal([]byte(inquiryJsonObject), &inquiryData)
-	// failed to parse data
-	if err != nil {
-		http.Error(w, "Failed to parse JSON data", http.StatusInternalServerError) // error message is optional
-		return inquiry.InquiryRequestVirtualAccountDataDTO{}, err
-	}
-
-	return inquiryData, nil
-}
-
-func GenerateResponseDirectInquiry(inquiryData inquiry.InquiryRequestVirtualAccountDataDTO) inquiry.InquiryResponseBodyDTO {
-	inquiryResponse := inquiry.InquiryResponseBodyDTO{
-		ResponseCode:       "2002400",
-		ResponseMessage:    "Successful",
-		VirtualAccountData: &inquiryData,
-	}
-	return inquiryResponse
-}
-
-func GenerateResponseDirectInquiryUnauthorized() inquiry.InquiryResponseBodyDTO {
-	inquiryResponse := inquiry.InquiryResponseBodyDTO{
-		ResponseCode:    "4010000",
-		ResponseMessage: "Unauthorized",
-	}
-	return inquiryResponse
-}
-
-func GenerateResponseDirectInquiryVaNotFound() inquiry.InquiryResponseBodyDTO {
-	inquiryResponse := inquiry.InquiryResponseBodyDTO{
-		ResponseCode:    "4012400",
-		ResponseMessage: "Virtual Account Not Found",
-	}
-	return inquiryResponse
-}
-
-```
-
-##### Update VA
-###### UpdateVaRequestDto Model
-Create the request object to update VA. Specify the acquirer in the request object.
-
-```go
-import updateVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/updateVa"
-
-updateVaRequestDTO := updateVaModels.UpdateVaDTO{
-	PartnerServiceId:    "    1899",
-	CustomerNo:          "000000000650",
-	VirtualAccountNo:    "    1899000000000650",
-	VirtualAccountName:  "SDK TEST",
-	VirtualAccountEmail: "sdk@email.com",
-	VirtualAccountPhone: "6281288932399",
-	TrxId:               "INV_20240710001",
-	TotalAmount: createVaModels.TotalAmount{
-		Value: "10000.00",
-		Currency: "IDR",
-	},
-	AdditionalInfo: updateVaModels.UpdateVaAdditionalInfoDTO{
-		Channel: "VIRTUAL_ACCOUNT_BANK_CIMB",
-		VirtualAccountConfig: updateVaModels.UpdateVaVirtualAccountConfigDTO{
-			Status: "ACTIVE",
-	        },
-	},
-	VirtualAccountTrxType: "C",
-	ExpiredDate:           "2024-11-24T10:55:00+07:00",
-}
-
-```
-
-###### updateVa Function
-Call the `updateVa` function to update VA. It will return the updated VA.
-
-```go
-updateVaResponse := dokuSnap.updateVa(updateVaRequestDTO);
-```
-
-##### Delete VA
-###### DeleteVaRequestDto Model
-Create the request object to delete VA. Specify the acquirer in the request object.
-
-```go
-import 	deleteVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/deleteVa"
-
-requestDeleteVa := deleteVaModels.DeleteVaRequestDto{
-   PartnerServiceId: "    1899",
-   CustomerNo:       "000000000971",
-   VirtualAccountNo: "    1899000000000971"
-   TrxId:            "757",
-   AdditionalInfo: deleteVaModels.DeleteVaRequestAdditionalInfo{
-     Channel: "VIRTUAL_ACCOUNT_BANK_CIMB",
-   },
-}
-```
-
-###### deletePaymentCode Function
-Call the `deletePaymentCode` function to delete VA.
-
-```go
-snap.DeletePaymentCode(requestDeleteVa)
-```
-
-##### Check Status VA
-###### CheckStatusVaRequestDto Model
-Create the request object to check status of your VA. Specify the acquirer in the request object.
-
-```go
-import checkVaModels "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/models/va/checkVa"
-
-inquiryRequestId := ""
-paymentRequestId := ""
-checkStatusVaRequestDto := checkVaModels.CheckStatusVARequestDto{
-   PartnerServiceId: updateVaResponseDto.VirtualAccountData.PartnerServiceId,
-   CustomerNo:       updateVaResponseDto.VirtualAccountData.CustomerNo,
-   VirtualAccountNo: updateVaResponseDto.VirtualAccountData.VirtualAccountNo,
-   InquiryRequestId: &inquiryRequestId,
-   PaymentRequestId: &paymentRequestId,
-}
-```
-
-###### checkStatusVa Function
-Call the `checkStatusVa` function to check the status of your VA.
-
-```go
-snap.CheckStatusVa(checkStatusVaRequestDto)
-```
+| Error Code | Description                           | Solution                                     |
+|------------|---------------------------------------|----------------------------------------------|
+| `4010000`  | Unauthorized                          | Check if Client ID and Secret Key are valid. |
+| `4012400`  | Virtual Account Not Found             | Verify the virtual account number provided.  |
+| `2002400`  | Successful                            | Transaction completed successfully.          |
 
 
-### Handling Payment Notification
-After your customers make a payment, you’ll receive a notification from DOKU to update the payment status on your end. DOKU first sends a token request (as with DIPC), then uses that token to send the payment notification.
-##### validateAsymmetricSignatureAndGenerateToken function
-Generate the response to DOKU, including the required token, by calling this function.
 
-```go
-/**
- * request -> *http.Request
- */
-response := dokuSnap.ValidateSignatureAndGenerateToken(request)
-
-```
-
-##### validateTokenAndGenerateNotificationReponse function
-Deserialize the raw notification data into a structured object using a Data Transfer Object (DTO). This allows you to update the order status, notify customers, or perform other necessary actions based on the notification details.
-
-```go
-response := dokuSnap.ValidateTokenAndGenerateNotificationResponse(r.Header.Get("Authorization"), requestBody)
-```
-
-##### generateNotificationResponse function
-DOKU requires a response to the notification. Use this function to serialize the response data to match DOKU’s format.
-You will need to validate the token first and provide the PaymentNotificationRequestBodyDto (you can use the model included in the SDK).
-
-```go
-/**
- * isTokenValid -> boolean
- * paymentNotificationRequestBodyDTO -> object
- */
-dokuSnap.GenerateNotificationResponse(isTokenValid, paymentNotificationRequestBodyDTO)
-```
-
-### 4. Additional Features
-Need to use our functions independently? No problem! Here’s how:
-#### - v1 to SNAP converter
-If you're one of our earliest users, you might still use our v1 APIs. In order to simplify your re-integration process to DOKU's SNAP API specification, DOKU provides you with a helper tools to directly convert v1 APIs to SNAP APIs specification.
-
-##### a. convertRequestV1
-Convert DOKU's inquiry and notification from SNAP format (JSON) to v1 format (XML). Feed the inquiry and notification directly to your app without manually mapping parameters or converting file formats.
-This function expects an XML string request and return a SNAP format of the request.
-
-```go
-/**
- * header -> HttpServletRequest
- * InquiryRequestBodyDto -> object
- */
-dokuSnap.directInquiryRequestMapping(header, InquiryRequestBodyDto);
-```
-
-##### b. convertResponseV1
-Convert your inquiry response to DOKU from v1 format (XML) to SNAP format (Form data). Our library handles response code mapping, allowing you to directly use the converted response and send it to DOKU.
-This function will return the response in form data format.
-
-```go
-/**
- * xmlString -> String
- */
-dokuSnap.directInquiryResponseMapping(xmlString);
-```
