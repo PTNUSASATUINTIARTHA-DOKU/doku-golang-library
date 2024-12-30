@@ -45,12 +45,12 @@ go get github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library@latest
 Before using the Doku Snap SDK, you need to initialize it with your credentials:
 1. **Client ID** and **Secret Key**: Retrieve these from the Integration menu in your Doku Dashboard
 2. **Private Key** and **Public Key** : Generate your Private Key and Public Key
-Merchant privateKey and publicKey
+   
+Merchant privateKey and publiKey
 How to generate :
-1 Generate private key RSA : **openssl genrsa -out private.key 2048**
-2 Set passphrase your private key RSA : **openssl pkcs8 -topk8 -inform PEM -outform PEM -in private.key -out pkcs8.key -v1 PBE-SHA1-3DES**
-3 Generate public key RSA : **openssl rsa -in private.key -outform PEM -pubout -out public.pem**
-
+1. generate private key RSA : openssl genrsa -out private.key 2048
+2. set passphrase your private key RSA : openssl pkcs8 -topk8 -inform PEM -outform PEM -in private.key -out pkcs8.key -v1 PBE-SHA1-3DES
+3. generate public key RSA : openssl rsa -in private.key -outform PEM -pubout -out public.pem
 The encryption model applied to messages involves both asymmetric and symmetric encryption, utilizing a combination of Private Key and Public Key, adhering to the following standards:
 
   1. Standard Asymmetric Encryption Signature: SHA256withRSA dengan Private Key ( Kpriv ) dan Public Key ( Kpub ) (256 bits)
