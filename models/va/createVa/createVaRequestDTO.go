@@ -11,14 +11,6 @@ import (
 	vaChannel "github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons"
 )
 
-type Origin struct {
-	Product       string `json:"product,omitempty"`
-	Source        string `json:"source,omitempty"`
-	SourceVersion string `json:"sourceVersion,omitempty"`
-	System        string `json:"system,omitempty"`
-	ApiFormat     string `json:"apiFormat,omitempty"`
-}
-
 type CreateVaRequestDto struct {
 	PartnerServiceId      string         `json:"partnerServiceId"`
 	CustomerNo            string         `json:"customerNo"`
@@ -31,7 +23,6 @@ type CreateVaRequestDto struct {
 	AdditionalInfo        AdditionalInfo `json:"additionalInfo"`
 	VirtualAccountTrxType string         `json:"virtualAccounTrxType"`
 	ExpiredDate           string         `json:"expiredDate"`
-	Origin                Origin         `json:"origin"`
 }
 
 func (dto *CreateVaRequestDto) ValidateVaRequestDto() error {
