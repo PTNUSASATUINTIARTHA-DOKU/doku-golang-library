@@ -1302,7 +1302,7 @@ func TestDirectDebit(t *testing.T) {
 	t.Run("TestBalanceInquiryChannelInvalid", func(t *testing.T) {
 		request := mockGenerated.BalanceInquiryRequest()
 		request.AdditionalInfo.Channel = ""
-		err := request.ValidateBalanceInquiryRequest()
+		err := request.ValidateBalanceInquiryRequest("")
 		if err == nil {
 			t.Fatalf("expected an error, got nil")
 		}
