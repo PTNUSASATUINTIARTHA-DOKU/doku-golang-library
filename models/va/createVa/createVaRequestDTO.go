@@ -23,6 +23,7 @@ type CreateVaRequestDto struct {
 	AdditionalInfo        AdditionalInfo `json:"additionalInfo"`
 	VirtualAccountTrxType string         `json:"virtualAccounTrxType"`
 	ExpiredDate           string         `json:"expiredDate"`
+	FreeTexts             []FreeTexts    `json:"freeTexts,omitempty"`
 }
 
 func (dto *CreateVaRequestDto) ValidateVaRequestDto() error {
