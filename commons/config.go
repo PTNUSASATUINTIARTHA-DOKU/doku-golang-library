@@ -17,7 +17,7 @@ const (
 	DIRECT_DEBIT_REFUND              = "/direct-debit/core/v1/debit/refund"
 	DIRECT_DEBIT_CHECK_STATUS        = "/orders/v1.0/debit/status"
 	DIRECT_DEBIT_CARD_UNBINDING      = "/direct-debit/core/v1/registration-card-unbind"
-	SDK_VERSION                      = "1.1.7"
+	SDK_VERSION                      = "1.1.8"
 )
 
 type Config struct{}

@@ -217,6 +217,17 @@ Parameters for **createVA** and **updateVA**
       <td>String</td>
       <td>❌</td>
     </tr>
+    <tr>
+      <td rowspan="2"><code>freeTexts</code></td>
+      <td colspan="2"><code>English</code>: Free text for additional description. <br> <small>Example: "Free texts"</small></td>
+      <td>String(64)</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td colspan="2"><code>Indonesia</code>: Free text for additional description. <br> <small>Example: "Tulisan Bebas"</small></td>
+      <td>String(64)</td>
+      <td>❌</td>
+    </tr>
   </tbody>
 </table>
 
@@ -246,6 +257,12 @@ Parameters for **createVA** and **updateVA**
           },
           VirtualAccountTrxType: "C",
           ExpiredDate: "2025-08-31T09:54:04+07:00",
+          FreeTexts: []createVaModels.FreeTexts{
+            {
+              English: "Free Texts",
+              Indonesia:   "Tulisan Bebas",
+            },
+          },
       }
 
       createVaResponse := snap.CreateVa(createVaRequestDTO)
