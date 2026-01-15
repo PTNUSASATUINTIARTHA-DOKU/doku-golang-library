@@ -21,7 +21,7 @@ type CreateVaRequestDto struct {
 	TrxId                 string         `json:"trxId"`
 	TotalAmount           TotalAmount    `json:"totalAmount"`
 	AdditionalInfo        AdditionalInfo `json:"additionalInfo"`
-	VirtualAccountTrxType string         `json:"virtualAccounTrxType"`
+	VirtualAccountTrxType string         `json:"virtualAccountTrxType"`
 	ExpiredDate           string         `json:"expiredDate"`
 	FreeTexts             []FreeTexts    `json:"freeTexts,omitempty"`
 }
