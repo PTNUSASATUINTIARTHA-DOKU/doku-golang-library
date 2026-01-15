@@ -1,6 +1,14 @@
 package controllers
 
 import (
+	"crypto"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/x509"
+	"encoding/pem"
+	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/PTNUSASATUINTIARTHA-DOKU/doku-golang-library/commons/utils"
@@ -11,6 +19,7 @@ import (
 )
 
 type TokenControllerInterface interface {
+	VerifyClientKey(privateKey, clientID string) error
 	GetTokenB2B(privateKey string, clientId string, isProduction bool) tokenModels.TokenB2BResponseDTO
 	GetTokenB2B2C(authCode string, privateKey string, clientId string, isProduction bool) (tokenModels.TokenB2B2CResponseDTO, error)
 	IsTokenInvalid(tokenB2B string, tokenExpiresIn int, tokenGeneratedTimestamp string) bool
@@ -25,6 +34,44 @@ var TokenServices services.TokenServices
 var SnapUtils utils.SnapUtils
 
 type TokenController struct{}
+
+func (tc TokenController) VerifyClientKey(privateKey, clientID string) error {
+	block, _ := pem.Decode([]byte(privateKey))
+	if block == nil {
+		return errors.New("failed to decode PEM block containing private key")
+	}
+
+	var (
+		rsaPrivateKey *rsa.PrivateKey
+		err           error
+	)
+
+	switch block.Type {
+	case "PRIVATE KEY":
+		privateKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+		if err != nil {
+			return err
+		}
+
+		var ok bool
+		if rsaPrivateKey, ok = privateKey.(*rsa.PrivateKey); !ok {
+			return errors.New("not an RSA private key")
+		}
+	case "RSA PRIVATE KEY":
+		if rsaPrivateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes); err != nil {
+			return err
+		}
+	default:
+		return errors.New("unsupported private key type")
+	}
+
+	hashed := sha256.Sum256(fmt.Appendf(nil, "%s|%s", clientID, TokenServices.GenerateTimestamp()))
+	if _, err := rsa.SignPKCS1v15(rand.Reader, rsaPrivateKey, crypto.SHA256, hashed[:]); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func (tc TokenController) GetTokenB2B(privateKey string, clientId string, isProduction bool) tokenModels.TokenB2BResponseDTO {
 	var xtimestamp = TokenServices.GenerateTimestamp()

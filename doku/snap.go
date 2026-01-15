@@ -52,6 +52,50 @@ type Snap struct {
 	tokenB2B2CGeneratedTimestamp string
 }
 
+type SnapOption interface {
+	apply(*Snap)
+}
+
+type snapOptionFn func(*Snap)
+
+func (o snapOptionFn) apply(s *Snap)      { o(s) }
+func ProductionEnv() SnapOption           { return snapOptionFn(func(s *Snap) { s.IsProduction = true }) }
+func WithIssuer(issuer string) SnapOption { return snapOptionFn(func(s *Snap) { s.Issuer = issuer }) }
+
+// NewClient creates a new Snap client.
+func NewClient(privateKey, publicKey, secretKey, clientID string, opts ...SnapOption) (*Snap, error) {
+	// initialize controllers if not already set
+	if TokenController == nil {
+		TokenController = controllers.TokenController{}
+	}
+	if VaController == nil {
+		VaController = controllers.VaController{}
+	}
+	if NotificationController == nil {
+		NotificationController = controllers.NotificationController{}
+	}
+	if DirectDebitController == nil {
+		DirectDebitController = &controllers.DirectDebitController{}
+	}
+
+	if err := TokenController.VerifyClientKey(privateKey, clientID); err != nil {
+		return nil, err
+	}
+
+	snap := &Snap{
+		PrivateKey: privateKey,
+		PublicKey:  publicKey,
+		SecretKey:  secretKey,
+		ClientId:   clientID,
+	}
+
+	for _, opt := range opts {
+		opt.apply(snap)
+	}
+
+	return snap, nil
+}
+
 func (snap *Snap) GetTokenB2B() tokenVaModels.TokenB2BResponseDTO {
 	tokenB2BResponseDTO := TokenController.GetTokenB2B(snap.PrivateKey, snap.ClientId, snap.IsProduction)
 	snap.SetTokenB2B(tokenB2BResponseDTO)

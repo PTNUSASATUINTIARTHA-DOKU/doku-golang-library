@@ -12,6 +12,15 @@ import (
 var mockGenerated utilsmock.MockGenerated
 var mockController = new(utilsmock.MockController)
 
+func TestNewClient(t *testing.T) {
+	doku.TokenController = mockController
+	mockController.On("VerifyClientKey", "privateKeyPem", "BRN-0221-1693209567392").Return(nil)
+
+	client, err := doku.NewClient("privateKeyPem", "publicKey", "BRN", "BRN-0221-1693209567392", doku.ProductionEnv())
+	assert.NoError(t, err)
+	assert.NotEmpty(t, client)
+}
+
 func TestGetTokenB2BSuccess(t *testing.T) {
 
 	doku.TokenController = mockController

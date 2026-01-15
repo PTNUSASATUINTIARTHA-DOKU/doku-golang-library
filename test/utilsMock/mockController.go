@@ -28,6 +28,7 @@ type MockController struct {
 }
 
 // TokenController
+func (m *MockController) VerifyClientKey(privateKey, clientID string) error { return nil }
 
 func (m *MockController) GetTokenB2B(privateKey string, clientId string, isProduction bool) models.TokenB2BResponseDTO {
 	args := m.Called(privateKey, clientId, isProduction)

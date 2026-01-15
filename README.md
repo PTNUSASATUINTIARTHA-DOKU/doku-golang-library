@@ -76,38 +76,24 @@ privateKey := "YOUR_PRIVATE_KEY"
 publicKey := "YOUR_PUBLIC_KEY"
 clientId := "YOUR_CLIENT_ID"
 secretKey := "YOUR_SECRET_KEY"
-isProduction := false
 issuer := "YOUR_ISSUER"
 
-doku.TokenController = controllers.TokenController{}
-doku.VaController = controllers.VaController{}
-doku.NotificationController = controllers.NotificationController{}
-doku.DirectDebitController = &controllers.DirectDebitController{}
 
-var snap doku.Snap
-snap = doku.Snap{
-    PrivateKey:   privateKey,
-    ClientId:     clientId,
-    IsProduction: isProduction,
-    SecretKey:    secretKey,
-    Issuer: 	  issuer,
-    PublicKey:    publicKey,
+client, err := doku.NewClient(privateKey, publicKey, secretKey, clientId, doku.ProductionEnv(), doku.WithIssuer(issuer))
+if err != nil{
+  return err
 }
 ```
 
 ## 2. Usage
 
 **Initialization**
-Always start by initializing the Snap object.
+Always start by initializing the Snap client:
 
 ```go
-snap = doku.Snap{
-    PrivateKey:   privateKey,
-    ClientId:     clientId,
-    IsProduction: isProduction,
-    SecretKey:    secretKey,
-    Issuer: 	  issuer,
-    PublicKey:    publicKey,
+client, err := doku.NewClient(privateKey, publicKey, secretKey, clientId, doku.ProductionEnv(), doku.WithIssuer(issuer))
+if err != nil{
+  return err
 }
 ```
 ### Virtual Account
